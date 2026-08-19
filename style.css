@@ -1,0 +1,643 @@
+/* =========================================
+   Smart Insulin Cap - Main Styles
+   ========================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --secondary: #0f172a;
+    --background: #f1f5f9;
+    --card: #ffffff;
+    --text: #0f172a;
+    --text-light: #64748b;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #f59e0b;
+    --border: #e2e8f0;
+    --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    --radius: 18px;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: var(--background);
+    color: var(--text);
+    min-height: 100vh;
+}
+
+/* =========================================
+   App Container
+   ========================================= */
+
+.app {
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    margin: 0 auto;
+    background: var(--background);
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* =========================================
+   Header
+   ========================================= */
+
+.header {
+    background: linear-gradient(
+        135deg,
+        var(--primary),
+        var(--primary-dark)
+    );
+
+    color: white;
+    padding: 28px 20px 32px;
+    border-radius: 0 0 28px 28px;
+    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.25);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-title {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.header-subtitle {
+    margin-top: 6px;
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+/* =========================================
+   Main Content
+   ========================================= */
+
+.main {
+    padding: 20px;
+   padding-bottom: 130px;
+    min-height: calc(100vh - 100px);
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 14px;
+}
+
+.section-subtitle {
+    color: var(--text-light);
+    font-size: 13px;
+    margin-bottom: 18px;
+}
+
+/* =========================================
+   Cards
+   ========================================= */
+
+.card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.card-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.card-value {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.card-label {
+    color: var(--text-light);
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+/* =========================================
+   Dashboard Grid
+   ========================================= */
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.stat-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+}
+
+.stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #eff6ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    font-size: 20px;
+    margin-bottom: 12px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.stat-label {
+    color: var(--text-light);
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+/* =========================================
+   Status
+   ========================================= */
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.status.connected {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status.connected .status-dot {
+    background: var(--success);
+}
+
+.status.disconnected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status.disconnected .status-dot {
+    background: var(--danger);
+}
+
+.status.waiting {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status.waiting .status-dot {
+    background: var(--warning);
+}
+
+/* =========================================
+   Injection Monitor
+   ========================================= */
+
+.monitor {
+    background: linear-gradient(
+        145deg,
+        #ffffff,
+        #f8fafc
+    );
+
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+}
+
+.monitor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.monitor-title {
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.monitor-status {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.monitor-value {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.angle-value {
+    font-size: 52px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.angle-unit {
+    font-size: 16px;
+    color: var(--text-light);
+    margin-left: 4px;
+}
+
+/* =========================================
+   Progress
+   ========================================= */
+
+.progress-container {
+    width: 100%;
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(
+        90deg,
+        var(--primary),
+        #60a5fa
+    );
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+/* =========================================
+   Sensor Cards
+   ========================================= */
+
+.sensor-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.sensor-card {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+}
+
+.sensor-name {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-bottom: 8px;
+}
+
+.sensor-value {
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.sensor-unit {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+/* =========================================
+   Buttons
+   ========================================= */
+
+.btn {
+    width: 100%;
+    border: none;
+    border-radius: 14px;
+    padding: 14px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: var(--secondary);
+}
+
+.btn-success {
+    background: var(--success);
+    color: white;
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+/* =========================================
+   Navigation
+   ========================================= */
+
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(15px);
+
+    border-top: 1px solid var(--border);
+
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+
+    padding: 10px 10px 12px;
+
+    z-index: 100;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 5px;
+
+    color: var(--text-light);
+    font-size: 11px;
+
+    cursor: pointer;
+    text-decoration: none;
+
+    padding: 6px;
+    border-radius: 12px;
+}
+
+.nav-icon {
+    font-size: 20px;
+}
+
+.nav-item.active {
+    color: var(--primary);
+    background: #eff6ff;
+    font-weight: 600;
+}
+
+/* =========================================
+   History
+   ========================================= */
+
+.history-item {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.history-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.history-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #eff6ff;
+    color: var(--primary);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.history-dose {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.history-date {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 4px;
+}
+
+/* =========================================
+   Empty State
+   ========================================= */
+
+.empty-state {
+    text-align: center;
+    padding: 45px 20px;
+    color: var(--text-light);
+}
+
+.empty-icon {
+    font-size: 45px;
+    margin-bottom: 14px;
+    opacity: 0.5;
+}
+
+.empty-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+}
+
+.empty-text {
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* =========================================
+   Forms
+   ========================================= */
+
+.input-group {
+    margin-bottom: 16px;
+}
+
+.input-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 7px;
+}
+
+.input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 13px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    background: white;
+}
+
+.input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* =========================================
+   Utility Classes
+   ========================================= */
+
+.text-center {
+    text-align: center;
+}
+
+.text-primary {
+    color: var(--primary);
+}
+
+.text-success {
+    color: var(--success);
+}
+
+.text-danger {
+    color: var(--danger);
+}
+
+.text-muted {
+    color: var(--text-light);
+}
+
+.mt-1 {
+    margin-top: 8px;
+}
+
+.mt-2 {
+    margin-top: 16px;
+}
+
+.mt-3 {
+    margin-top: 24px;
+}
+
+.mb-1 {
+    margin-bottom: 8px;
+}
+
+.mb-2 {
+    margin-bottom: 16px;
+}
+
+.mb-3 {
+    margin-bottom: 24px;
+}
+
+/* =========================================
+   Responsive
+   ========================================= */
+
+@media (min-width: 600px) {
+    body {
+        padding: 20px 0;
+    }
+
+    .app {
+        min-height: calc(100vh - 40px);
+        border-radius: 28px;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+        overflow: hidden;
+    }
+
+    .bottom-nav {
+        bottom: 20px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+    }
+}
+
+@media (max-width: 360px) {
+    .main {
+        padding: 16px;
+    }
+
+    .header {
+        padding: 24px 16px 28px;
+    }
+
+    .angle-value {
+        font-size: 44px;
+    }
+
+    .stat-value {
+        font-size: 21px;
+    }
+}#injectionPage {
+    padding-bottom: 30px;
+}
+
+#injectionPage .card {
+    padding: 14px 16px;
+}
+
+#injectionPage .card-title {
+    margin-bottom: 6px;
+}
+
+#injectionPage .card-label {
+    line-height: 1.5;
+}
+
+#connectButton {
+    margin-bottom: 20px;
+}
