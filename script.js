@@ -60,7 +60,7 @@ function showPage(pageName) {
 // Device Connection
 // ==========================================
 
-function connectDevice() {
+async function connectDevice() {
 
     const connectionStatus =
         document.getElementById("connectionStatus");
@@ -72,35 +72,117 @@ function connectDevice() {
         document.getElementById("systemMessage");
 
 
-    if (connectionStatus) {
+    try {
 
-        connectionStatus.className =
-            "status waiting";
+        // بررسی پشتیبانی Web Bluetooth
+        if (!navigator.bluetooth) {
 
-    }
+            throw new Error(
+                "Web Bluetooth توسط این مرورگر پشتیبانی نمی‌شود."
+            );
 
-
-    if (connectionText) {
-
-        connectionText.textContent =
-            "در حال اتصال...";
-
-    }
+        }
 
 
-    if (systemMessage) {
+        // وضعیت اتصال
+        if (connectionStatus) {
+            connectionStatus.className =
+                "status waiting";
+        }
 
-        systemMessage.textContent =
-            "در حال تلاش برای اتصال به درپوش هوشمند...";
+        if (connectionText) {
+            connectionText.textContent =
+                "در حال جستجوی درپوش...";
+        }
 
-    }
+        if (systemMessage) {
+            systemMessage.textContent =
+                "لطفاً در پنجره بازشده، SmartInsulinCap را انتخاب کنید.";
+        }
 
 
-    // فعلاً اتصال واقعی BLE نداریم.
-    // در مرحله بعد Web Bluetooth را اضافه می‌کنیم.
+        // درخواست اتصال به ESP32
+        const device =
+            await navigator.bluetooth.requestDevice({
 
-    setTimeout(function() {
+                filters: [
+                    {
+                        name: "SmartInsulinCap"
+                    }
+                ],
 
+                optionalServices: [
+                    "12345678-1234-1234-1234-1234567890ab"
+                ]
+
+            });
+
+
+        console.log(
+            "Device selected:",
+            device.name
+        );
+
+
+        // اتصال به GATT
+        const server =
+            await device.gatt.connect();
+
+
+        console.log(
+            "GATT connected"
+        );
+
+
+        // دریافت Service
+        const service =
+            await server.getPrimaryService(
+                "12345678-1234-1234-1234-1234567890ab"
+            );
+
+
+        // دریافت Characteristic
+        const characteristic =
+            await service.getCharacteristic(
+                "abcdefab-1234-1234-1234-abcdefabcdef"
+            );
+
+
+        // فعال کردن دریافت Notification
+        await characteristic.startNotifications();
+
+
+        characteristic.addEventListener(
+            "characteristicvaluechanged",
+            function(event) {
+
+                const decoder =
+                    new TextDecoder("utf-8");
+
+                const value =
+                    decoder.decode(
+                        event.target.value
+                    );
+
+
+                console.log(
+                    "ESP32:",
+                    value
+                );
+
+
+                if (systemMessage) {
+
+                    systemMessage.textContent =
+                        "دریافت از درپوش: " + value;
+
+                }
+
+            }
+        );
+
+
+        // اتصال موفق
         if (connectionStatus) {
 
             connectionStatus.className =
@@ -112,7 +194,7 @@ function connectDevice() {
         if (connectionText) {
 
             connectionText.textContent =
-                "آماده";
+                "متصل";
 
         }
 
@@ -120,11 +202,52 @@ function connectDevice() {
         if (systemMessage) {
 
             systemMessage.textContent =
-                "سیستم آماده دریافت اطلاعات درپوش است.";
+                "درپوش هوشمند با موفقیت متصل شد.";
 
         }
 
-    }, 1500);
+
+        console.log(
+            "SmartInsulinCap connected successfully"
+        );
+
+    }
+
+
+    catch (error) {
+
+        console.error(
+            "BLE Connection Error:",
+            error
+        );
+
+
+        if (connectionStatus) {
+
+            connectionStatus.className =
+                "status waiting";
+
+        }
+
+
+        if (connectionText) {
+
+            connectionText.textContent =
+                "اتصال ناموفق";
+
+        }
+
+
+        if (systemMessage) {
+
+            systemMessage.textContent =
+                "اتصال به درپوش انجام نشد.";
+
+        }
+
+    }
+
+
 
 }
 
