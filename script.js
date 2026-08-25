@@ -102,20 +102,19 @@ async function connectDevice() {
 
 
         // درخواست اتصال به ESP32
-        const device =
-            await navigator.bluetooth.requestDevice({
+       const device =
+    await navigator.bluetooth.requestDevice({
 
-                filters: [
-                    {
-                        name: "SmartInsulinCap"
-                    }
-                ],
-
-                optionalServices: [
+        filters: [
+            {
+                services: [
                     "12345678-1234-1234-1234-1234567890ab"
                 ]
+            }
+        ]
 
-            });
+    });
+
 
 
         console.log(
