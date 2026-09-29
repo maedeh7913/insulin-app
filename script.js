@@ -1,892 +1,511 @@
 ```javascript
-// ======================================================
-//              Smart Insulin Cap - script.js
-// ======================================================
+// ===============================
+// Smart Insulin Cap - script.js
+// ===============================
 
+// ---------- BLE Configuration ----------
+const SERVICE_UUID = "12345678-1234-1234-1234-1234567890ab";
+const CHARACTERISTIC_UUID = "abcdefab-1234-1234-1234-abcdefabcdef";
 
-// ======================================================
-//                     BLE UUID
-// ======================================================
-
-const SERVICE_UUID =
-    "12345678-1234-1234-1234-1234567890ab";
-
-const CHARACTERISTIC_UUID =
-    "abcdefab-1234-1234-1234-abcdefabcdef";
-
-
-// ======================================================
-//                  BLE Variables
-// ======================================================
-
-let bluetoothDevice = null;
+let bleDevice = null;
 let bleCharacteristic = null;
 
+// ---------- Application State ----------
+let appData = {
+    capConnected: false,
+    injectionActive: false,
+    angle: 0,
+    dose: null,
+    durationMs: null,
+    injectionInvalid: false
+};
 
-// ======================================================
-//                  Page Navigation
-// ======================================================
+
+// ===============================
+// PAGE NAVIGATION
+// ===============================
 
 function showPage(pageName) {
 
-    const pages =
-        document.querySelectorAll(".page");
+    const pages = document.querySelectorAll(".page");
 
     pages.forEach(page => {
-
-        page.style.display = "none";
         page.classList.remove("active");
-
+        page.style.display = "none";
     });
 
+    const targetPage = document.getElementById(pageName + "Page");
 
-    const page =
-        document.getElementById(
-            pageName + "Page"
-        );
-
-
-    if (page) {
-
-        page.style.display = "block";
-        page.classList.add("active");
-
+    if (targetPage) {
+        targetPage.classList.add("active");
+        targetPage.style.display = "block";
     }
 
+    // Update bottom navigation
+    const navButtons = document.querySelectorAll(".nav-item");
 
-    const navItems =
-        document.querySelectorAll(".nav-item");
+    navButtons.forEach(button => {
+        button.classList.remove("active");
 
+        const onclickValue = button.getAttribute("onclick");
 
-    navItems.forEach(item => {
-
-        item.classList.remove("active");
-
-    });
-
-
-    navItems.forEach(item => {
-
-        const onclick =
-            item.getAttribute("onclick");
-
-        if (
-            onclick &&
-            onclick.includes(
-                "'" + pageName + "'"
-            )
-        ) {
-
-            item.classList.add("active");
-
+        if (onclickValue && onclickValue.includes("'" + pageName + "'")) {
+            button.classList.add("active");
         }
-
     });
 
+    // Scroll to top
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
 }
 
 
-// ======================================================
-//                  Connection Status
-// ======================================================
+// ===============================
+// CONNECTION STATUS
+// ===============================
 
 function setConnectionStatus(status) {
 
-    const connectionStatus =
-        document.getElementById(
-            "connectionStatus"
-        );
+    const connectionStatus = document.getElementById("connectionStatus");
+    const connectionText = document.getElementById("connectionText");
+    const connectButton = document.getElementById("connectButton");
 
-    const connectionText =
-        document.getElementById(
-            "connectionText"
-        );
+    if (!connectionStatus || !connectionText) return;
 
-    const connectButton =
-        document.getElementById(
-            "connectButton"
-        );
-
-
-    if (!connectionStatus || !connectionText) {
-        return;
-    }
-
-
-    // حذف وضعیت‌های قبلی
     connectionStatus.classList.remove(
         "connected",
         "waiting",
-        "disconnected"
+        "disconnected",
+        "connecting"
     );
 
+    if (status === "connected") {
 
-    // --------------------------------------------------
-    // آماده
-    // --------------------------------------------------
-
-    if (status === "ready") {
-
-        connectionStatus.classList.add(
-            "waiting"
-        );
-
-        connectionText.textContent =
-            "آماده";
-
+        connectionStatus.classList.add("connected");
+        connectionText.textContent = "متصل";
 
         if (connectButton) {
-
-            connectButton.disabled = false;
-
-            connectButton.textContent =
-                "اتصال به درپوش";
-        }
-
-    }
-
-
-    // --------------------------------------------------
-    // در حال اتصال
-    // --------------------------------------------------
-
-    else if (status === "connecting") {
-
-        connectionStatus.classList.add(
-            "waiting"
-        );
-
-        connectionText.textContent =
-            "در حال اتصال";
-
-
-        if (connectButton) {
-
+            connectButton.textContent = "متصل شد";
             connectButton.disabled = true;
-
-            connectButton.textContent =
-                "در حال اتصال...";
         }
 
-    }
+    } else if (status === "connecting") {
 
-
-    // --------------------------------------------------
-    // متصل
-    // --------------------------------------------------
-
-    else if (status === "connected") {
-
-        connectionStatus.classList.add(
-            "connected"
-        );
-
-        connectionText.textContent =
-            "متصل";
-
+        connectionStatus.classList.add("waiting");
+        connectionText.textContent = "در حال اتصال...";
 
         if (connectButton) {
-
-            connectButton.disabled = false;
-
-            connectButton.textContent =
-                "متصل به درپوش";
+            connectButton.textContent = "در حال اتصال...";
+            connectButton.disabled = true;
         }
 
-    }
+    } else if (status === "disconnected") {
 
-
-    // --------------------------------------------------
-    // قطع
-    // --------------------------------------------------
-
-    else if (status === "disconnected") {
-
-        connectionStatus.classList.add(
-            "waiting"
-        );
-
-        connectionText.textContent =
-            "قطع";
-
+        connectionStatus.classList.add("disconnected");
+        connectionText.textContent = "قطع";
 
         if (connectButton) {
-
+            connectButton.textContent = "اتصال به درپوش";
             connectButton.disabled = false;
-
-            connectButton.textContent =
-                "اتصال مجدد";
         }
 
-    }
+    } else {
 
+        connectionStatus.classList.add("waiting");
+        connectionText.textContent = "آماده";
+
+        if (connectButton) {
+            connectButton.textContent = "اتصال به درپوش";
+            connectButton.disabled = false;
+        }
+    }
 }
 
 
-// ======================================================
-//                     BLE Connect
-// ======================================================
+// ===============================
+// BLE CONNECTION
+// ===============================
 
 async function connectDevice() {
 
+    if (!navigator.bluetooth) {
+
+        alert("مرورگر شما از Web Bluetooth پشتیبانی نمی‌کند.");
+        return;
+    }
+
     try {
 
-        // ------------------------------------------------
-        // بررسی Web Bluetooth
-        // ------------------------------------------------
+        setConnectionStatus("connecting");
 
-        if (!navigator.bluetooth) {
+        bleDevice = await navigator.bluetooth.requestDevice({
+            filters: [
+                {
+                    services: [SERVICE_UUID]
+                }
+            ]
+        });
 
-            alert(
-                "مرورگر شما از Web Bluetooth پشتیبانی نمی‌کند."
-            );
-
-            return;
-        }
-
-
-        // ------------------------------------------------
-        // وضعیت اتصال
-        // ------------------------------------------------
-
-        setConnectionStatus(
-            "connecting"
-        );
-
-
-        // ------------------------------------------------
-        // انتخاب دستگاه
-        // ------------------------------------------------
-
-        bluetoothDevice =
-            await navigator.bluetooth.requestDevice({
-
-                filters: [
-                    {
-                        services: [
-                            SERVICE_UUID
-                        ]
-                    }
-                ],
-
-                optionalServices: [
-                    SERVICE_UUID
-                ]
-
-            });
-
-
-        console.log(
-            "دستگاه انتخاب شد:",
-            bluetoothDevice.name
-        );
-
-
-        // ------------------------------------------------
-        // Listener برای قطع اتصال
-        // ------------------------------------------------
-
-        bluetoothDevice.addEventListener(
+        bleDevice.addEventListener(
             "gattserverdisconnected",
             handleDisconnect
         );
 
+        const server = await bleDevice.gatt.connect();
 
-        // ------------------------------------------------
-        // اتصال GATT
-        // ------------------------------------------------
-
-        const server =
-            await bluetoothDevice.gatt.connect();
-
-
-        console.log(
-            "GATT connected"
+        const service = await server.getPrimaryService(
+            SERVICE_UUID
         );
 
-
-        // ------------------------------------------------
-        // دریافت Service
-        // ------------------------------------------------
-
-        const service =
-            await server.getPrimaryService(
-                SERVICE_UUID
-            );
-
-
-        // ------------------------------------------------
-        // دریافت Characteristic
-        // ------------------------------------------------
-
-        bleCharacteristic =
-            await service.getCharacteristic(
-                CHARACTERISTIC_UUID
-            );
-
-
-        // ------------------------------------------------
-        // فعال‌سازی Notification
-        // ------------------------------------------------
+        bleCharacteristic = await service.getCharacteristic(
+            CHARACTERISTIC_UUID
+        );
 
         await bleCharacteristic.startNotifications();
-
 
         bleCharacteristic.addEventListener(
             "characteristicvaluechanged",
             handleBLEData
         );
 
-
-        // ------------------------------------------------
-        // اتصال موفق
-        // ------------------------------------------------
-
-        setConnectionStatus(
-            "connected"
-        );
-
+        setConnectionStatus("connected");
 
         updateSystemMessage({
-            capConnected: false,
-            injectionActive: false,
-            injectionInvalid: false
+            capConnected: appData.capConnected,
+            injectionActive: appData.injectionActive,
+            injectionInvalid: appData.injectionInvalid
         });
 
+    } catch (error) {
 
-        console.log(
-            "Smart Insulin Cap متصل شد."
-        );
+        console.error("BLE Connection Error:", error);
 
+        setConnectionStatus("ready");
+
+        updateSystemMessage({
+            capConnected: appData.capConnected,
+            injectionActive: appData.injectionActive,
+            injectionInvalid: appData.injectionInvalid
+        });
     }
-
-    catch (error) {
-
-        console.error(
-            "BLE connection error:",
-            error
-        );
-
-
-        bleCharacteristic = null;
-
-
-        setConnectionStatus(
-            "ready"
-        );
-
-
-        // اگر کاربر پنجره انتخاب دستگاه را بسته باشد
-        if (
-            error &&
-            error.name ===
-            "NotFoundError"
-        ) {
-
-            console.log(
-                "انتخاب دستگاه لغو شد."
-            );
-
-            return;
-        }
-
-
-        alert(
-            "اتصال به درپوش انجام نشد."
-        );
-
-    }
-
 }
 
 
-// ======================================================
-//                  BLE Disconnect
-// ======================================================
+// ===============================
+// BLE DISCONNECT
+// ===============================
 
 function handleDisconnect() {
 
-    console.log(
-        "Smart Insulin Cap disconnected."
-    );
-
-
     bleCharacteristic = null;
 
+    setConnectionStatus("disconnected");
 
-    setConnectionStatus(
-        "disconnected"
-    );
-
-
-    const systemMessage =
-        document.getElementById(
-            "systemMessage"
-        );
-
-
-    if (systemMessage) {
-
-        systemMessage.textContent =
-            "ارتباط با درپوش قطع شده است.";
-    }
-
+    updateSystemMessage({
+        capConnected: appData.capConnected,
+        injectionActive: appData.injectionActive,
+        injectionInvalid: appData.injectionInvalid
+    });
 }
 
 
-// ======================================================
-//                  BLE Data Handler
-// ======================================================
+// ===============================
+// RECEIVE BLE DATA
+// ===============================
 
 function handleBLEData(event) {
 
     try {
 
-        const decoder =
-            new TextDecoder(
-                "utf-8"
-            );
+        const decoder = new TextDecoder("utf-8");
 
-
-        const message =
-            decoder.decode(
-                event.target.value
-            ).trim();
-
-
-        console.log(
-            "BLE:",
-            message
+        const text = decoder.decode(
+            event.target.value
         );
 
+        console.log("BLE:", text);
 
-        const data =
-            JSON.parse(
-                message
-            );
+        const data = JSON.parse(text);
 
+        appData = {
+            ...appData,
+            ...data
+        };
 
-        // ------------------------------------------------
-        // 1. وضعیت فیزیکی درپوش
-        // ------------------------------------------------
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                data,
-                "capConnected"
-            )
-        ) {
-
-            updateCapStatus(
-                Boolean(
-                    data.capConnected
-                )
-            );
-
+        // Cap status
+        if ("capConnected" in data) {
+            updateCapStatus(data.capConnected);
         }
 
-
-        // ------------------------------------------------
-        // 2. وضعیت تزریق
-        // ------------------------------------------------
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                data,
-                "injectionActive"
-            )
-        ) {
-
-            updateInjectionState(
-                Boolean(
-                    data.injectionActive
-                )
-            );
-
+        // Injection state
+        if ("injectionActive" in data) {
+            updateInjectionState(data.injectionActive);
         }
 
-
-        // ------------------------------------------------
-        // 3. زاویه
-        // ------------------------------------------------
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                data,
-                "angle"
-            )
-        ) {
-
-            updateAngle(
-                Number(
-                    data.angle
-                )
-            );
-
+        // Angle
+        if ("angle" in data) {
+            updateAngle(data.angle);
         }
 
-
-        // ------------------------------------------------
-        // 4. دوز
-        // ------------------------------------------------
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                data,
-                "dose"
-            )
-        ) {
-
-            updateDose(
-                Number(
-                    data.dose
-                )
-            );
-
+        // Dose
+        if ("dose" in data) {
+            updateDose(data.dose);
         }
 
-
-        // ------------------------------------------------
-        // 5. مدت تزریق
-        // ------------------------------------------------
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                data,
-                "durationMs"
-            )
-        ) {
-
-            updateDuration(
-                Number(
-                    data.durationMs
-                )
-            );
-
+        // Duration
+        if ("durationMs" in data) {
+            updateDuration(data.durationMs);
         }
 
-
-        // ------------------------------------------------
-        // 6. اعتبار تزریق
-        // ------------------------------------------------
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                data,
-                "injectionInvalid"
-            )
-        ) {
-
-            updateValidity(
-                Boolean(
-                    data.injectionInvalid
-                )
-            );
-
+        // Validity
+        if ("injectionInvalid" in data) {
+            updateValidity(data.injectionInvalid);
         }
 
+        updateSystemMessage(data);
 
-        // ------------------------------------------------
-        // پیام سیستم
-        // ------------------------------------------------
-
-        updateSystemMessage(
-            data
-        );
-
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.error(
-            "BLE data parsing error:",
+            "Invalid BLE data:",
             error
         );
-
     }
-
 }
 
 
-// ======================================================
-//                  Cap Status
-// ======================================================
+// ===============================
+// CAP STATUS
+// ===============================
 
-function updateCapStatus(
-    connected
-) {
+function updateCapStatus(connected) {
 
-    const capStatus =
-        document.getElementById(
-            "capStatus"
-        );
+    const capStatus = document.getElementById("capStatus");
+    const capStatusValue = document.getElementById("capStatusValue");
 
+    const text = connected
+        ? "درپوش متصل است"
+        : "درپوش جدا است";
 
-    const capStatusValue =
-        document.getElementById(
-            "capStatusValue"
-        );
-
-
-    if (connected) {
-
-        if (capStatus) {
-
-            capStatus.textContent =
-                "درپوش متصل است";
-
-        }
-
-
-        if (capStatusValue) {
-
-            capStatusValue.textContent =
-                "متصل";
-
-        }
-
+    if (capStatus) {
+        capStatus.textContent = text;
     }
 
-    else {
-
-        if (capStatus) {
-
-            capStatus.textContent =
-                "درپوش جدا است";
-
-        }
-
-
-        if (capStatusValue) {
-
-            capStatusValue.textContent =
-                "جدا";
-
-        }
-
+    if (capStatusValue) {
+        capStatusValue.textContent = text;
     }
 
+    appData.capConnected = connected;
 }
 
 
-// ======================================================
-//                  Injection State
-// ======================================================
+// ===============================
+// INJECTION STATE
+// ===============================
 
-function updateInjectionState(
-    active
-) {
+function updateInjectionState(active) {
 
     const injectionStateValue =
-        document.getElementById(
-            "injectionStateValue"
-        );
-
+        document.getElementById("injectionStateValue");
 
     if (injectionStateValue) {
 
         injectionStateValue.textContent =
             active
                 ? "در حال تزریق"
-                : "غیرفعال";
-
+                : "آماده";
     }
 
+    setInjectionStatus(active);
 
-    setInjectionStatus(
-        active
-            ? "injecting"
-            : "ready"
-    );
-
+    appData.injectionActive = active;
 }
 
 
-// ======================================================
-//                  Angle
-// ======================================================
+// ===============================
+// INJECTION STATUS HEADER
+// ===============================
 
-function updateAngle(
-    angle
-) {
+function setInjectionStatus(active) {
 
-    if (!Number.isFinite(angle)) {
-        return;
+    const injectionStatus =
+        document.getElementById("injectionStatus");
+
+    if (!injectionStatus) return;
+
+    const statusText =
+        injectionStatus.querySelector("span:last-child");
+
+    injectionStatus.classList.remove(
+        "waiting",
+        "injecting",
+        "completed"
+    );
+
+    if (active) {
+
+        injectionStatus.classList.add("injecting");
+
+        if (statusText) {
+            statusText.textContent = "در حال تزریق";
+        }
+
+    } else {
+
+        injectionStatus.classList.add("waiting");
+
+        if (statusText) {
+            statusText.textContent = "آماده";
+        }
     }
+}
 
+
+// ===============================
+// ANGLE
+// ===============================
+
+function updateAngle(angle) {
 
     const angleValue =
-        document.getElementById(
-            "angleValue"
-        );
-
+        document.getElementById("angleValue");
 
     const anglePercent =
-        document.getElementById(
-            "anglePercent"
-        );
-
+        document.getElementById("anglePercent");
 
     const angleProgress =
-        document.getElementById(
-            "angleProgress"
-        );
+        document.getElementById("angleProgress");
 
+    const numericAngle =
+        Number(angle) || 0;
 
     if (angleValue) {
 
         angleValue.textContent =
-            angle.toFixed(2);
-
+            numericAngle.toFixed(2) + "°";
     }
 
-
-    const MAX_DISPLAY_ANGLE =
-        1080;
-
-
-    let percent =
-        Math.abs(angle)
-        /
-        MAX_DISPLAY_ANGLE
-        *
-        100;
-
-
-    percent =
+    // Maximum display scale = 1080 degrees
+    const percent =
         Math.min(
             Math.max(
-                percent,
+                (Math.abs(numericAngle) / 1080) * 100,
                 0
             ),
             100
         );
 
-
     if (anglePercent) {
-
         anglePercent.textContent =
-            Math.round(
-                percent
-            ) + "%";
-
+            Math.round(percent) + "%";
     }
-
 
     if (angleProgress) {
-
         angleProgress.style.width =
             percent + "%";
-
     }
 
+    appData.angle = numericAngle;
 }
 
 
-// ======================================================
-//                  Dose
-// ======================================================
+// ===============================
+// DOSE
+// ===============================
 
-function updateDose(
-    dose
-) {
-
-    if (!Number.isFinite(dose)) {
-        return;
-    }
-
+function updateDose(dose) {
 
     const doseValue =
-        document.getElementById(
-            "doseValue"
-        );
-
+        document.getElementById("doseValue");
 
     const lastDose =
-        document.getElementById(
-            "lastDose"
-        );
+        document.getElementById("lastDose");
 
+    const numericDose =
+        Number(dose);
 
-    dose =
-        Math.max(
-            0,
-            dose
-        );
+    if (
+        dose === null ||
+        dose === undefined ||
+        isNaN(numericDose)
+    ) {
 
+        if (doseValue) {
+            doseValue.textContent = "--";
+        }
 
-    if (doseValue) {
-
-        doseValue.textContent =
-            dose.toFixed(2);
-
-    }
-
-
-    if (lastDose) {
-
-        lastDose.textContent =
-            dose.toFixed(2);
-
-    }
-
-}
-
-
-// ======================================================
-//                  Duration
-// ======================================================
-
-function updateDuration(
-    durationMs
-) {
-
-    if (!Number.isFinite(durationMs)) {
         return;
     }
 
+    const formattedDose =
+        numericDose.toFixed(2);
+
+    if (doseValue) {
+        doseValue.textContent =
+            formattedDose + " واحد";
+    }
+
+    if (lastDose) {
+        lastDose.textContent =
+            formattedDose + " واحد";
+    }
+
+    appData.dose = numericDose;
+}
+
+
+// ===============================
+// DURATION
+// ===============================
+
+function updateDuration(durationMs) {
 
     const durationValue =
-        document.getElementById(
-            "durationValue"
-        );
+        document.getElementById("durationValue");
 
+    if (
+        durationMs === null ||
+        durationMs === undefined
+    ) {
+
+        if (durationValue) {
+            durationValue.textContent = "--";
+        }
+
+        return;
+    }
 
     const seconds =
-        Math.max(
-            0,
-            durationMs
-        ) / 1000;
-
+        Number(durationMs) / 1000;
 
     if (durationValue) {
 
         durationValue.textContent =
-            seconds.toFixed(3);
-
+            seconds.toFixed(2) + " ثانیه";
     }
 
+    appData.durationMs =
+        Number(durationMs);
 }
 
 
-// ======================================================
-//                  Validity
-// ======================================================
+// ===============================
+// VALIDITY
+// ===============================
 
-function updateValidity(
-    invalid
-) {
+function updateValidity(invalid) {
 
     const validityValue =
-        document.getElementById(
-            "validityValue"
-        );
+        document.getElementById("validityValue");
 
+    if (!validityValue) return;
 
-    if (!validityValue) {
-        return;
-    }
-
+    validityValue.classList.remove(
+        "valid",
+        "invalid"
+    );
 
     if (invalid) {
 
@@ -897,13 +516,7 @@ function updateValidity(
             "invalid"
         );
 
-        validityValue.classList.remove(
-            "valid"
-        );
-
-    }
-
-    else {
+    } else {
 
         validityValue.textContent =
             "معتبر";
@@ -911,122 +524,41 @@ function updateValidity(
         validityValue.classList.add(
             "valid"
         );
-
-        validityValue.classList.remove(
-            "invalid"
-        );
-
     }
 
+    appData.injectionInvalid =
+        invalid;
 }
 
 
-// ======================================================
-//                  Injection Status
-// ======================================================
+// ===============================
+// SYSTEM MESSAGE
+// ===============================
 
-function setInjectionStatus(
-    status
-) {
-
-    const injectionStatus =
-        document.getElementById(
-            "injectionStatus"
-        );
-
-
-    if (!injectionStatus) {
-        return;
-    }
-
-
-    const textElement =
-        injectionStatus.querySelector(
-            "span:last-child"
-        );
-
-
-    injectionStatus.classList.remove(
-        "waiting",
-        "connected",
-        "injecting",
-        "completed"
-    );
-
-
-    if (status === "injecting") {
-
-        injectionStatus.classList.add(
-            "injecting"
-        );
-
-
-        if (textElement) {
-
-            textElement.textContent =
-                "در حال تزریق";
-
-        }
-
-    }
-
-    else if (status === "completed") {
-
-        injectionStatus.classList.add(
-            "completed"
-        );
-
-
-        if (textElement) {
-
-            textElement.textContent =
-                "تزریق تکمیل شد";
-
-        }
-
-    }
-
-    else {
-
-        injectionStatus.classList.add(
-            "waiting"
-        );
-
-
-        if (textElement) {
-
-            textElement.textContent =
-                "آماده";
-
-        }
-
-    }
-
-}
-
-
-// ======================================================
-//                  System Message
-// ======================================================
-
-function updateSystemMessage(
-    data
-) {
+function updateSystemMessage(data) {
 
     const systemMessage =
-        document.getElementById(
-            "systemMessage"
-        );
+        document.getElementById("systemMessage");
 
+    if (!systemMessage) return;
 
-    if (!systemMessage) {
+    if (!data.capConnected) {
+
+        systemMessage.textContent =
+            "درپوش را به قلم متصل کنید.";
+
         return;
     }
 
+    if (data.injectionInvalid) {
 
-    if (
-        data.injectionActive
-    ) {
+        systemMessage.textContent =
+            "تزریق نامعتبر است.";
+
+        return;
+    }
+
+    if (data.injectionActive) {
 
         systemMessage.textContent =
             "فرآیند تزریق در حال انجام است.";
@@ -1034,137 +566,55 @@ function updateSystemMessage(
         return;
     }
 
-
-    if (
-        data.injectionInvalid
-    ) {
-
-        systemMessage.textContent =
-            "تزریق نامعتبر است؛ درپوش هنگام تزریق جدا شده است.";
-
-        return;
-    }
-
-
-    if (
-        data.capConnected === false
-    ) {
-
-        systemMessage.textContent =
-            "درپوش متصل نیست.";
-
-        return;
-    }
-
-
-    if (
-        data.capConnected === true
-    ) {
-
-        systemMessage.textContent =
-            "درپوش متصل است و سیستم آماده ثبت تزریق است.";
-
-        return;
-    }
-
-
     systemMessage.textContent =
-        "در انتظار دریافت اطلاعات از درپوش...";
-
+        "درپوش متصل است و سیستم آماده ثبت تزریق است.";
 }
 
 
-// ======================================================
-//                  Initial State
-// ======================================================
+// ===============================
+// INITIALIZATION
+// ===============================
 
 document.addEventListener(
     "DOMContentLoaded",
     function () {
 
-        // وضعیت ارتباط اپ با ESP32
-        setConnectionStatus(
-            "ready"
-        );
+        // Initial BLE status
+        setConnectionStatus("ready");
 
+        // Initial application state
+        updateCapStatus(false);
+        updateInjectionState(false);
 
-        // وضعیت اولیه درپوش
-        updateCapStatus(
-            false
-        );
+        updateAngle(0);
 
-
-        // وضعیت اولیه تزریق
-        updateInjectionState(
-            false
-        );
-
-
-        // زاویه
-        updateAngle(
-            0
-        );
-
-
-        // دوز
         const doseValue =
-            document.getElementById(
-                "doseValue"
-            );
+            document.getElementById("doseValue");
 
+        const durationValue =
+            document.getElementById("durationValue");
+
+        const validityValue =
+            document.getElementById("validityValue");
 
         if (doseValue) {
-
-            doseValue.textContent =
-                "--";
-
+            doseValue.textContent = "--";
         }
-
-
-        // مدت
-        const durationValue =
-            document.getElementById(
-                "durationValue"
-            );
-
 
         if (durationValue) {
-
-            durationValue.textContent =
-                "--";
-
+            durationValue.textContent = "--";
         }
-
-
-        // اعتبار
-        const validityValue =
-            document.getElementById(
-                "validityValue"
-            );
-
 
         if (validityValue) {
-
-            validityValue.textContent =
-                "--";
-
+            validityValue.textContent = "--";
         }
 
-
-        // پیام سیستم
-        const systemMessage =
-            document.getElementById(
-                "systemMessage"
-            );
-
-
-        if (systemMessage) {
-
-            systemMessage.textContent =
-                "برای شروع، به درپوش هوشمند متصل شوید.";
-
-        }
-
+        updateSystemMessage({
+            capConnected: false,
+            injectionActive: false,
+            injectionInvalid: false
+        });
     }
 );
 ```
+
