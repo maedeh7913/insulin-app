@@ -3,8 +3,9 @@
 //              Smart Insulin Cap - script.js
 // ======================================================
 
+
 // ======================================================
-//                  BLE Configuration
+//                     BLE UUID
 // ======================================================
 
 const SERVICE_UUID =
@@ -12,6 +13,11 @@ const SERVICE_UUID =
 
 const CHARACTERISTIC_UUID =
     "abcdefab-1234-1234-1234-abcdefabcdef";
+
+
+// ======================================================
+//                  BLE Variables
+// ======================================================
 
 let bluetoothDevice = null;
 let bleCharacteristic = null;
@@ -23,42 +29,212 @@ let bleCharacteristic = null;
 
 function showPage(pageName) {
 
-    const pages = document.querySelectorAll(".page");
+    const pages =
+        document.querySelectorAll(".page");
 
     pages.forEach(page => {
+
+        page.style.display = "none";
         page.classList.remove("active");
+
     });
 
-    const selectedPage =
-        document.getElementById(pageName);
 
-    if (selectedPage) {
-        selectedPage.classList.add("active");
+    const page =
+        document.getElementById(
+            pageName + "Page"
+        );
+
+
+    if (page) {
+
+        page.style.display = "block";
+        page.classList.add("active");
+
     }
 
-    // تغییر وضعیت منوی پایین
+
     const navItems =
         document.querySelectorAll(".nav-item");
 
+
     navItems.forEach(item => {
+
         item.classList.remove("active");
 
-        if (item.dataset.page === pageName) {
-            item.classList.add("active");
-        }
     });
+
+
+    navItems.forEach(item => {
+
+        const onclick =
+            item.getAttribute("onclick");
+
+        if (
+            onclick &&
+            onclick.includes(
+                "'" + pageName + "'"
+            )
+        ) {
+
+            item.classList.add("active");
+
+        }
+
+    });
+
 }
 
 
 // ======================================================
-//                  BLE Connection
+//                  Connection Status
+// ======================================================
+
+function setConnectionStatus(status) {
+
+    const connectionStatus =
+        document.getElementById(
+            "connectionStatus"
+        );
+
+    const connectionText =
+        document.getElementById(
+            "connectionText"
+        );
+
+    const connectButton =
+        document.getElementById(
+            "connectButton"
+        );
+
+
+    if (!connectionStatus || !connectionText) {
+        return;
+    }
+
+
+    // حذف وضعیت‌های قبلی
+    connectionStatus.classList.remove(
+        "connected",
+        "waiting",
+        "disconnected"
+    );
+
+
+    // --------------------------------------------------
+    // آماده
+    // --------------------------------------------------
+
+    if (status === "ready") {
+
+        connectionStatus.classList.add(
+            "waiting"
+        );
+
+        connectionText.textContent =
+            "آماده";
+
+
+        if (connectButton) {
+
+            connectButton.disabled = false;
+
+            connectButton.textContent =
+                "اتصال به درپوش";
+        }
+
+    }
+
+
+    // --------------------------------------------------
+    // در حال اتصال
+    // --------------------------------------------------
+
+    else if (status === "connecting") {
+
+        connectionStatus.classList.add(
+            "waiting"
+        );
+
+        connectionText.textContent =
+            "در حال اتصال";
+
+
+        if (connectButton) {
+
+            connectButton.disabled = true;
+
+            connectButton.textContent =
+                "در حال اتصال...";
+        }
+
+    }
+
+
+    // --------------------------------------------------
+    // متصل
+    // --------------------------------------------------
+
+    else if (status === "connected") {
+
+        connectionStatus.classList.add(
+            "connected"
+        );
+
+        connectionText.textContent =
+            "متصل";
+
+
+        if (connectButton) {
+
+            connectButton.disabled = false;
+
+            connectButton.textContent =
+                "متصل به درپوش";
+        }
+
+    }
+
+
+    // --------------------------------------------------
+    // قطع
+    // --------------------------------------------------
+
+    else if (status === "disconnected") {
+
+        connectionStatus.classList.add(
+            "waiting"
+        );
+
+        connectionText.textContent =
+            "قطع";
+
+
+        if (connectButton) {
+
+            connectButton.disabled = false;
+
+            connectButton.textContent =
+                "اتصال مجدد";
+        }
+
+    }
+
+}
+
+
+// ======================================================
+//                     BLE Connect
 // ======================================================
 
 async function connectDevice() {
 
     try {
 
-        // بررسی پشتیبانی Web Bluetooth
+        // ------------------------------------------------
+        // بررسی Web Bluetooth
+        // ------------------------------------------------
+
         if (!navigator.bluetooth) {
 
             alert(
@@ -70,6 +246,15 @@ async function connectDevice() {
 
 
         // ------------------------------------------------
+        // وضعیت اتصال
+        // ------------------------------------------------
+
+        setConnectionStatus(
+            "connecting"
+        );
+
+
+        // ------------------------------------------------
         // انتخاب دستگاه
         // ------------------------------------------------
 
@@ -78,13 +263,16 @@ async function connectDevice() {
 
                 filters: [
                     {
-                        services: [SERVICE_UUID]
+                        services: [
+                            SERVICE_UUID
+                        ]
                     }
                 ],
 
                 optionalServices: [
                     SERVICE_UUID
                 ]
+
             });
 
 
@@ -95,7 +283,7 @@ async function connectDevice() {
 
 
         // ------------------------------------------------
-        // اتصال GATT
+        // Listener برای قطع اتصال
         // ------------------------------------------------
 
         bluetoothDevice.addEventListener(
@@ -104,11 +292,17 @@ async function connectDevice() {
         );
 
 
+        // ------------------------------------------------
+        // اتصال GATT
+        // ------------------------------------------------
+
         const server =
             await bluetoothDevice.gatt.connect();
 
 
-        console.log("BLE متصل شد.");
+        console.log(
+            "GATT connected"
+        );
 
 
         // ------------------------------------------------
@@ -132,7 +326,7 @@ async function connectDevice() {
 
 
         // ------------------------------------------------
-        // فعال کردن Notification
+        // فعال‌سازی Notification
         // ------------------------------------------------
 
         await bleCharacteristic.startNotifications();
@@ -145,13 +339,23 @@ async function connectDevice() {
 
 
         // ------------------------------------------------
-        // تغییر وضعیت رابط کاربری
+        // اتصال موفق
         // ------------------------------------------------
 
-        setConnectionStatus(true);
+        setConnectionStatus(
+            "connected"
+        );
+
+
+        updateSystemMessage({
+            capConnected: false,
+            injectionActive: false,
+            injectionInvalid: false
+        });
+
 
         console.log(
-            "ارتباط با SmartInsulinCap برقرار شد."
+            "Smart Insulin Cap متصل شد."
         );
 
     }
@@ -159,16 +363,40 @@ async function connectDevice() {
     catch (error) {
 
         console.error(
-            "خطا در اتصال BLE:",
+            "BLE connection error:",
             error
         );
 
-        setConnectionStatus(false);
+
+        bleCharacteristic = null;
+
+
+        setConnectionStatus(
+            "ready"
+        );
+
+
+        // اگر کاربر پنجره انتخاب دستگاه را بسته باشد
+        if (
+            error &&
+            error.name ===
+            "NotFoundError"
+        ) {
+
+            console.log(
+                "انتخاب دستگاه لغو شد."
+            );
+
+            return;
+        }
+
 
         alert(
             "اتصال به درپوش انجام نشد."
         );
+
     }
+
 }
 
 
@@ -179,73 +407,46 @@ async function connectDevice() {
 function handleDisconnect() {
 
     console.log(
-        "ارتباط BLE قطع شد."
+        "Smart Insulin Cap disconnected."
     );
+
 
     bleCharacteristic = null;
 
-    setConnectionStatus(false);
+
+    setConnectionStatus(
+        "disconnected"
+    );
+
+
+    const systemMessage =
+        document.getElementById(
+            "systemMessage"
+        );
+
+
+    if (systemMessage) {
+
+        systemMessage.textContent =
+            "ارتباط با درپوش قطع شده است.";
+    }
+
 }
 
 
 // ======================================================
-//                  Connection Status
-// ======================================================
-
-function setConnectionStatus(connected) {
-
-    const connectionText =
-        document.getElementById("connectionText");
-
-    const connectionStatus =
-        document.getElementById("connectionStatus");
-
-
-    if (connected) {
-
-        if (connectionText) {
-            connectionText.textContent =
-                "متصل";
-        }
-
-        if (connectionStatus) {
-            connectionStatus.classList.add(
-                "connected"
-            );
-        }
-
-    }
-
-    else {
-
-        if (connectionText) {
-            connectionText.textContent =
-                "قطع";
-        }
-
-        if (connectionStatus) {
-            connectionStatus.classList.remove(
-                "connected"
-            );
-        }
-    }
-}
-
-
-// ======================================================
-//                  Receive BLE Data
+//                  BLE Data Handler
 // ======================================================
 
 function handleBLEData(event) {
 
     try {
 
-        // ------------------------------------------------
-        // تبدیل داده BLE به متن
-        // ------------------------------------------------
-
         const decoder =
-            new TextDecoder("utf-8");
+            new TextDecoder(
+                "utf-8"
+            );
+
 
         const message =
             decoder.decode(
@@ -254,38 +455,21 @@ function handleBLEData(event) {
 
 
         console.log(
-            "BLE Data:",
+            "BLE:",
             message
         );
 
 
-        // ------------------------------------------------
-        // تبدیل JSON
-        // ------------------------------------------------
-
         const data =
-            JSON.parse(message);
+            JSON.parse(
+                message
+            );
 
 
         // ------------------------------------------------
-        // دریافت ۶ پارامتر اصلی
+        // 1. وضعیت فیزیکی درپوش
         // ------------------------------------------------
 
-        /*
-            ساختار مورد انتظار از ESP32:
-
-            {
-                "capConnected": true,
-                "injectionActive": true,
-                "angle": 354.18,
-                "dose": 19.68,
-                "durationMs": 3544,
-                "injectionInvalid": false
-            }
-        */
-
-
-        // 1. وضعیت درپوش
         if (
             Object.prototype.hasOwnProperty.call(
                 data,
@@ -294,12 +478,18 @@ function handleBLEData(event) {
         ) {
 
             updateCapStatus(
-                data.capConnected
+                Boolean(
+                    data.capConnected
+                )
             );
+
         }
 
 
+        // ------------------------------------------------
         // 2. وضعیت تزریق
+        // ------------------------------------------------
+
         if (
             Object.prototype.hasOwnProperty.call(
                 data,
@@ -308,12 +498,18 @@ function handleBLEData(event) {
         ) {
 
             updateInjectionState(
-                data.injectionActive
+                Boolean(
+                    data.injectionActive
+                )
             );
+
         }
 
 
+        // ------------------------------------------------
         // 3. زاویه
+        // ------------------------------------------------
+
         if (
             Object.prototype.hasOwnProperty.call(
                 data,
@@ -322,12 +518,18 @@ function handleBLEData(event) {
         ) {
 
             updateAngle(
-                Number(data.angle)
+                Number(
+                    data.angle
+                )
             );
+
         }
 
 
+        // ------------------------------------------------
         // 4. دوز
+        // ------------------------------------------------
+
         if (
             Object.prototype.hasOwnProperty.call(
                 data,
@@ -336,12 +538,18 @@ function handleBLEData(event) {
         ) {
 
             updateDose(
-                Number(data.dose)
+                Number(
+                    data.dose
+                )
             );
+
         }
 
 
+        // ------------------------------------------------
         // 5. مدت تزریق
+        // ------------------------------------------------
+
         if (
             Object.prototype.hasOwnProperty.call(
                 data,
@@ -350,12 +558,18 @@ function handleBLEData(event) {
         ) {
 
             updateDuration(
-                Number(data.durationMs)
+                Number(
+                    data.durationMs
+                )
             );
+
         }
 
 
+        // ------------------------------------------------
         // 6. اعتبار تزریق
+        // ------------------------------------------------
+
         if (
             Object.prototype.hasOwnProperty.call(
                 data,
@@ -364,26 +578,33 @@ function handleBLEData(event) {
         ) {
 
             updateValidity(
-                data.injectionInvalid
+                Boolean(
+                    data.injectionInvalid
+                )
             );
+
         }
 
 
         // ------------------------------------------------
-        // نمایش پیام سیستم
+        // پیام سیستم
         // ------------------------------------------------
 
-        updateSystemMessage(data);
+        updateSystemMessage(
+            data
+        );
 
     }
 
     catch (error) {
 
         console.error(
-            "خطا در پردازش داده BLE:",
+            "BLE data parsing error:",
             error
         );
+
     }
+
 }
 
 
@@ -391,12 +612,15 @@ function handleBLEData(event) {
 //                  Cap Status
 // ======================================================
 
-function updateCapStatus(connected) {
+function updateCapStatus(
+    connected
+) {
 
     const capStatus =
         document.getElementById(
             "capStatus"
         );
+
 
     const capStatusValue =
         document.getElementById(
@@ -404,24 +628,44 @@ function updateCapStatus(connected) {
         );
 
 
-    const text =
-        connected
-            ? "متصل"
-            : "جدا";
+    if (connected) {
+
+        if (capStatus) {
+
+            capStatus.textContent =
+                "درپوش متصل است";
+
+        }
 
 
-    // داشبورد
-    if (capStatus) {
-        capStatus.textContent =
-            text;
+        if (capStatusValue) {
+
+            capStatusValue.textContent =
+                "متصل";
+
+        }
+
     }
 
+    else {
 
-    // صفحه مانیتورینگ
-    if (capStatusValue) {
-        capStatusValue.textContent =
-            text;
+        if (capStatus) {
+
+            capStatus.textContent =
+                "درپوش جدا است";
+
+        }
+
+
+        if (capStatusValue) {
+
+            capStatusValue.textContent =
+                "جدا";
+
+        }
+
     }
+
 }
 
 
@@ -429,7 +673,9 @@ function updateCapStatus(connected) {
 //                  Injection State
 // ======================================================
 
-function updateInjectionState(active) {
+function updateInjectionState(
+    active
+) {
 
     const injectionStateValue =
         document.getElementById(
@@ -443,15 +689,16 @@ function updateInjectionState(active) {
             active
                 ? "در حال تزریق"
                 : "غیرفعال";
+
     }
 
 
-    // وضعیت اصلی صفحه مانیتورینگ
     setInjectionStatus(
         active
             ? "injecting"
             : "ready"
     );
+
 }
 
 
@@ -459,17 +706,26 @@ function updateInjectionState(active) {
 //                  Angle
 // ======================================================
 
-function updateAngle(angle) {
+function updateAngle(
+    angle
+) {
+
+    if (!Number.isFinite(angle)) {
+        return;
+    }
+
 
     const angleValue =
         document.getElementById(
             "angleValue"
         );
 
+
     const anglePercent =
         document.getElementById(
             "anglePercent"
         );
+
 
     const angleProgress =
         document.getElementById(
@@ -477,43 +733,32 @@ function updateAngle(angle) {
         );
 
 
-    // جلوگیری از NaN
-    if (isNaN(angle)) {
-        return;
-    }
-
-
-    // مقدار زاویه
     if (angleValue) {
 
         angleValue.textContent =
-            angle.toFixed(2) + "°";
+            angle.toFixed(2);
+
     }
 
 
-    // ------------------------------------------------
-    // نوار پیشرفت
-    // ------------------------------------------------
+    const MAX_DISPLAY_ANGLE =
+        1080;
 
-    /*
-       مقدار 1080 درجه به عنوان سقف نمایش
-       در نظر گرفته شده است.
-
-       این مقدار فقط برای نمایش گرافیکی است
-       و روی محاسبه واقعی زاویه تأثیری ندارد.
-    */
-
-    const MAX_DISPLAY_ANGLE = 1080;
 
     let percent =
         Math.abs(angle)
-        / MAX_DISPLAY_ANGLE
-        * 100;
+        /
+        MAX_DISPLAY_ANGLE
+        *
+        100;
 
 
     percent =
         Math.min(
-            Math.max(percent, 0),
+            Math.max(
+                percent,
+                0
+            ),
             100
         );
 
@@ -521,7 +766,10 @@ function updateAngle(angle) {
     if (anglePercent) {
 
         anglePercent.textContent =
-            Math.round(percent) + "%";
+            Math.round(
+                percent
+            ) + "%";
+
     }
 
 
@@ -529,7 +777,9 @@ function updateAngle(angle) {
 
         angleProgress.style.width =
             percent + "%";
+
     }
+
 }
 
 
@@ -537,12 +787,20 @@ function updateAngle(angle) {
 //                  Dose
 // ======================================================
 
-function updateDose(dose) {
+function updateDose(
+    dose
+) {
+
+    if (!Number.isFinite(dose)) {
+        return;
+    }
+
 
     const doseValue =
         document.getElementById(
             "doseValue"
         );
+
 
     const lastDose =
         document.getElementById(
@@ -550,12 +808,6 @@ function updateDose(dose) {
         );
 
 
-    if (isNaN(dose)) {
-        return;
-    }
-
-
-    // جلوگیری از نمایش مقدار منفی
     dose =
         Math.max(
             0,
@@ -566,8 +818,8 @@ function updateDose(dose) {
     if (doseValue) {
 
         doseValue.textContent =
-            dose.toFixed(2)
-            + " واحد";
+            dose.toFixed(2);
+
     }
 
 
@@ -575,7 +827,9 @@ function updateDose(dose) {
 
         lastDose.textContent =
             dose.toFixed(2);
+
     }
+
 }
 
 
@@ -583,7 +837,14 @@ function updateDose(dose) {
 //                  Duration
 // ======================================================
 
-function updateDuration(durationMs) {
+function updateDuration(
+    durationMs
+) {
+
+    if (!Number.isFinite(durationMs)) {
+        return;
+    }
+
 
     const durationValue =
         document.getElementById(
@@ -591,29 +852,30 @@ function updateDuration(durationMs) {
         );
 
 
-    if (isNaN(durationMs)) {
-        return;
-    }
-
-
     const seconds =
-        durationMs / 1000;
+        Math.max(
+            0,
+            durationMs
+        ) / 1000;
 
 
     if (durationValue) {
 
         durationValue.textContent =
-            seconds.toFixed(3)
-            + " ثانیه";
+            seconds.toFixed(3);
+
     }
+
 }
 
 
 // ======================================================
-//                  Injection Validity
+//                  Validity
 // ======================================================
 
-function updateValidity(invalid) {
+function updateValidity(
+    invalid
+) {
 
     const validityValue =
         document.getElementById(
@@ -638,6 +900,7 @@ function updateValidity(invalid) {
         validityValue.classList.remove(
             "valid"
         );
+
     }
 
     else {
@@ -652,7 +915,9 @@ function updateValidity(invalid) {
         validityValue.classList.remove(
             "invalid"
         );
+
     }
+
 }
 
 
@@ -660,7 +925,9 @@ function updateValidity(invalid) {
 //                  Injection Status
 // ======================================================
 
-function setInjectionStatus(status) {
+function setInjectionStatus(
+    status
+) {
 
     const injectionStatus =
         document.getElementById(
@@ -673,52 +940,68 @@ function setInjectionStatus(status) {
     }
 
 
-    switch (status) {
-
-        case "ready":
-
-            injectionStatus.textContent =
-                "آماده";
-
-            injectionStatus.classList.remove(
-                "injecting",
-                "completed"
-            );
-
-            break;
+    const textElement =
+        injectionStatus.querySelector(
+            "span:last-child"
+        );
 
 
-        case "injecting":
+    injectionStatus.classList.remove(
+        "waiting",
+        "connected",
+        "injecting",
+        "completed"
+    );
 
-            injectionStatus.textContent =
+
+    if (status === "injecting") {
+
+        injectionStatus.classList.add(
+            "injecting"
+        );
+
+
+        if (textElement) {
+
+            textElement.textContent =
                 "در حال تزریق";
 
-            injectionStatus.classList.add(
-                "injecting"
-            );
+        }
 
-            injectionStatus.classList.remove(
-                "completed"
-            );
+    }
 
-            break;
+    else if (status === "completed") {
+
+        injectionStatus.classList.add(
+            "completed"
+        );
 
 
-        case "completed":
+        if (textElement) {
 
-            injectionStatus.textContent =
+            textElement.textContent =
                 "تزریق تکمیل شد";
 
-            injectionStatus.classList.add(
-                "completed"
-            );
+        }
 
-            injectionStatus.classList.remove(
-                "injecting"
-            );
-
-            break;
     }
+
+    else {
+
+        injectionStatus.classList.add(
+            "waiting"
+        );
+
+
+        if (textElement) {
+
+            textElement.textContent =
+                "آماده";
+
+        }
+
+    }
+
 }
 
 
@@ -726,7 +1009,9 @@ function setInjectionStatus(status) {
 //                  System Message
 // ======================================================
 
-function updateSystemMessage(data) {
+function updateSystemMessage(
+    data
+) {
 
     const systemMessage =
         document.getElementById(
@@ -739,8 +1024,9 @@ function updateSystemMessage(data) {
     }
 
 
-    // اگر تزریق فعال است
-    if (data.injectionActive) {
+    if (
+        data.injectionActive
+    ) {
 
         systemMessage.textContent =
             "فرآیند تزریق در حال انجام است.";
@@ -749,8 +1035,9 @@ function updateSystemMessage(data) {
     }
 
 
-    // اگر تزریق نامعتبر شده
-    if (data.injectionInvalid) {
+    if (
+        data.injectionInvalid
+    ) {
 
         systemMessage.textContent =
             "تزریق نامعتبر است؛ درپوش هنگام تزریق جدا شده است.";
@@ -759,8 +1046,9 @@ function updateSystemMessage(data) {
     }
 
 
-    // اگر درپوش متصل نیست
-    if (!data.capConnected) {
+    if (
+        data.capConnected === false
+    ) {
 
         systemMessage.textContent =
             "درپوش متصل نیست.";
@@ -769,129 +1057,114 @@ function updateSystemMessage(data) {
     }
 
 
-    // حالت عادی
+    if (
+        data.capConnected === true
+    ) {
+
+        systemMessage.textContent =
+            "درپوش متصل است و سیستم آماده ثبت تزریق است.";
+
+        return;
+    }
+
+
     systemMessage.textContent =
-        "سیستم آماده ثبت تزریق است.";
+        "در انتظار دریافت اطلاعات از درپوش...";
+
 }
 
 
 // ======================================================
-//                  Initialize Dashboard
+//                  Initial State
 // ======================================================
 
 document.addEventListener(
     "DOMContentLoaded",
     function () {
 
-        // وضعیت اولیه اتصال
-        setConnectionStatus(false);
+        // وضعیت ارتباط اپ با ESP32
+        setConnectionStatus(
+            "ready"
+        );
 
 
-        // وضعیت اولیه زاویه
-        updateAngle(0);
+        // وضعیت اولیه درپوش
+        updateCapStatus(
+            false
+        );
 
 
-        // وضعیت اولیه دوز
+        // وضعیت اولیه تزریق
+        updateInjectionState(
+            false
+        );
+
+
+        // زاویه
+        updateAngle(
+            0
+        );
+
+
+        // دوز
         const doseValue =
             document.getElementById(
                 "doseValue"
             );
 
+
         if (doseValue) {
+
             doseValue.textContent =
                 "--";
+
         }
 
 
-        // وضعیت اولیه مدت تزریق
+        // مدت
         const durationValue =
             document.getElementById(
                 "durationValue"
             );
 
+
         if (durationValue) {
+
             durationValue.textContent =
                 "--";
+
         }
 
 
-        // وضعیت اولیه اعتبار
+        // اعتبار
         const validityValue =
             document.getElementById(
                 "validityValue"
             );
 
+
         if (validityValue) {
+
             validityValue.textContent =
                 "--";
+
         }
 
 
-        // وضعیت اولیه درپوش
-        updateCapStatus(false);
-
-
-        // وضعیت اولیه تزریق
-        updateInjectionState(false);
-
-
-        // پیام اولیه
+        // پیام سیستم
         const systemMessage =
             document.getElementById(
                 "systemMessage"
             );
 
+
         if (systemMessage) {
 
             systemMessage.textContent =
-                "برای شروع، درپوش را متصل کنید.";
+                "برای شروع، به درپوش هوشمند متصل شوید.";
+
         }
 
-
-        // ------------------------------------------------
-        // دکمه اتصال
-        // ------------------------------------------------
-
-        const connectButton =
-            document.getElementById(
-                "connectButton"
-            );
-
-
-        if (connectButton) {
-
-            connectButton.addEventListener(
-                "click",
-                connectDevice
-            );
-        }
-
-
-        // ------------------------------------------------
-        // مقداردهی اولیه صفحه
-        // ------------------------------------------------
-
-        showPage("home");
     }
 );
-```
-
-**نکته:** این `script.js` فرض می‌کند در `index.html` این IDها وجود داشته باشند:
-
-```text
-capStatus
-capStatusValue
-injectionStateValue
-angleValue
-anglePercent
-angleProgress
-doseValue
-durationValue
-validityValue
-injectionStatus
-systemMessage
-connectButton
-connectionText
-connectionStatus
-lastDose
 ```
