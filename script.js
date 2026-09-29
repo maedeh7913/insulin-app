@@ -1,8 +1,12 @@
 // ============================================================
 // Smart Insulin Cap - BLE Web App
+// Final Integrated Version
 // ============================================================
 
-// ---------------- BLE UUIDs ----------------
+
+// ============================================================
+// BLE CONFIGURATION
+// ============================================================
 
 const SERVICE_UUID =
     "12345678-1234-1234-1234-1234567890ab";
@@ -11,19 +15,29 @@ const CHARACTERISTIC_UUID =
     "abcdefab-1234-1234-1234-abcdefabcdef";
 
 
-// ---------------- BLE Variables ----------------
+// ============================================================
+// BLE VARIABLES
+// ============================================================
 
 let bleDevice = null;
 let bleCharacteristic = null;
 
 
-// ---------------- App Data ----------------
+// ============================================================
+// APPLICATION DATA
+// ============================================================
 
 let lastInjection = null;
+
 let injectionHistory = [];
 
 let totalDose = 0;
+
 let injectionCount = 0;
+
+
+// برای جلوگیری از ثبت چندباره یک تزریق
+let lastInjectionStatus = "";
 
 
 // ============================================================
@@ -32,14 +46,27 @@ let injectionCount = 0;
 
 function showPage(pageName) {
 
+    // همه صفحات را غیرفعال کن
     document.querySelectorAll(".page").forEach(page => {
         page.classList.remove("active");
     });
 
-    const page = document.getElementById(pageName);
+
+    // صفحه موردنظر را فعال کن
+    const page =
+        document.getElementById(pageName);
+
 
     if (page) {
+
         page.classList.add("active");
+
+    } else {
+
+        console.warn(
+            "Page not found:",
+            pageName
+        );
     }
 }
 
@@ -52,6 +79,10 @@ async function connectDevice() {
 
     try {
 
+        // ----------------------------------------------------
+        // Check Web Bluetooth
+        // ----------------------------------------------------
+
         if (!navigator.bluetooth) {
 
             alert(
@@ -61,16 +92,26 @@ async function connectDevice() {
             return;
         }
 
-        console.log("Requesting Bluetooth device...");
 
-        bleDevice = await navigator.bluetooth.requestDevice({
+        console.log(
+            "Requesting Bluetooth device..."
+        );
 
-            filters: [
-                {
-                    services: [SERVICE_UUID]
-                }
-            ]
-        });
+
+        // ----------------------------------------------------
+        // Select device
+        // ----------------------------------------------------
+
+        bleDevice =
+            await navigator.bluetooth.requestDevice({
+
+                filters: [
+                    {
+                        services: [SERVICE_UUID]
+                    }
+                ]
+            });
+
 
         console.log(
             "Device selected:",
@@ -78,7 +119,9 @@ async function connectDevice() {
         );
 
 
-        // Handle disconnect
+        // ----------------------------------------------------
+        // Disconnect listener
+        // ----------------------------------------------------
 
         bleDevice.addEventListener(
             "gattserverdisconnected",
@@ -86,22 +129,33 @@ async function connectDevice() {
         );
 
 
-        // Connect to GATT server
+        // ----------------------------------------------------
+        // Connect GATT
+        // ----------------------------------------------------
 
-        console.log("Connecting to GATT server...");
+        console.log(
+            "Connecting to GATT server..."
+        );
+
 
         const server =
             await bleDevice.gatt.connect();
 
-        console.log("GATT connected");
+
+        console.log(
+            "GATT connected"
+        );
 
 
+        // ----------------------------------------------------
         // Get service
+        // ----------------------------------------------------
 
         const service =
             await server.getPrimaryService(
                 SERVICE_UUID
             );
+
 
         console.log(
             "Service found:",
@@ -109,12 +163,15 @@ async function connectDevice() {
         );
 
 
+        // ----------------------------------------------------
         // Get characteristic
+        // ----------------------------------------------------
 
         bleCharacteristic =
             await service.getCharacteristic(
                 CHARACTERISTIC_UUID
             );
+
 
         console.log(
             "Characteristic found:",
@@ -122,16 +179,21 @@ async function connectDevice() {
         );
 
 
+        // ----------------------------------------------------
         // Start notifications
+        // ----------------------------------------------------
 
         await bleCharacteristic.startNotifications();
+
 
         console.log(
             "Notifications started successfully"
         );
 
 
-        // Listen for incoming data
+        // ----------------------------------------------------
+        // Listen for BLE data
+        // ----------------------------------------------------
 
         bleCharacteristic.addEventListener(
             "characteristicvaluechanged",
@@ -139,52 +201,44 @@ async function connectDevice() {
         );
 
 
-        // Update UI
+        // ----------------------------------------------------
+        // Update connection UI
+        // ----------------------------------------------------
 
         setConnectionStatus(
             true,
             "درپوش متصل است"
         );
 
+
         updateSystemMessage(
             "اتصال به درپوش با موفقیت برقرار شد."
         );
 
 
-        // Try reading current value immediately
+        // ----------------------------------------------------
+        // Read current value
+        // ----------------------------------------------------
 
         try {
 
             const value =
                 await bleCharacteristic.readValue();
 
-            const decoder =
-                new TextDecoder("utf-8");
 
             const text =
-                decoder.decode(value);
+                decodeBLEValue(value);
+
 
             console.log(
                 "Initial BLE value:",
                 text
             );
 
-            if (text) {
 
-                try {
+            if (text && text.trim() !== "") {
 
-                    const data =
-                        JSON.parse(text);
-
-                    processDeviceData(data);
-
-                } catch (error) {
-
-                    console.log(
-                        "Initial value is not JSON:",
-                        text
-                    );
-                }
+                processBLEText(text);
             }
 
         } catch (readError) {
@@ -203,10 +257,12 @@ async function connectDevice() {
             error
         );
 
+
         setConnectionStatus(
             false,
             "اتصال برقرار نشد"
         );
+
 
         updateSystemMessage(
             "خطا در اتصال به درپوش: " +
@@ -217,45 +273,119 @@ async function connectDevice() {
 
 
 // ============================================================
-// BLE DATA HANDLER
+// DECODE BLE DATA
 // ============================================================
 
-function handleBLEData(event) {
+function decodeBLEValue(
+    value
+) {
 
     try {
 
         const decoder =
             new TextDecoder("utf-8");
 
+
+        return decoder.decode(
+            value
+        );
+
+    } catch (error) {
+
+        console.error(
+            "BLE DECODE ERROR:",
+            error
+        );
+
+
+        return "";
+    }
+}
+
+
+// ============================================================
+// BLE NOTIFICATION HANDLER
+// ============================================================
+
+function handleBLEData(
+    event
+) {
+
+    try {
+
+        console.log(
+            "BLE notification received!"
+        );
+
+
+        // دریافت مقدار خام
         const value =
-            decoder.decode(
-                event.target.value
+            event.target.value;
+
+
+        console.log(
+            "Raw BLE value:",
+            value
+        );
+
+
+        // تبدیل به متن
+        const text =
+            decodeBLEValue(value);
+
+
+        console.log(
+            "BLE TEXT:",
+            text
+        );
+
+
+        if (
+            !text ||
+            text.trim() === ""
+        ) {
+
+            console.log(
+                "BLE data is empty."
             );
 
-        console.log(
-            "========== BLE DATA =========="
+            return;
+        }
+
+
+        // پردازش JSON
+        processBLEText(text);
+
+
+    } catch (error) {
+
+        console.error(
+            "BLE HANDLER ERROR:",
+            error
         );
-
-        console.log(value);
-
-        console.log(
-            "=============================="
-        );
+    }
+}
 
 
-        // Convert JSON string to object
+// ============================================================
+// PROCESS BLE TEXT
+// ============================================================
+
+function processBLEText(
+    text
+) {
+
+    try {
 
         const data =
-            JSON.parse(value);
+            JSON.parse(text);
 
 
         console.log(
-            "Parsed BLE data:",
+            "BLE JSON DATA:",
             data
         );
 
-
-        // Process data
 
         processDeviceData(data);
 
@@ -263,8 +393,14 @@ function handleBLEData(event) {
     } catch (error) {
 
         console.error(
-            "BLE DATA ERROR:",
+            "JSON PARSE ERROR:",
             error
+        );
+
+
+        console.log(
+            "Received text:",
+            text
         );
     }
 }
@@ -274,7 +410,14 @@ function handleBLEData(event) {
 // PROCESS DEVICE DATA
 // ============================================================
 
-function processDeviceData(data) {
+function processDeviceData(
+    data
+) {
+
+    if (!data) {
+        return;
+    }
+
 
     console.log(
         "Processing device data:",
@@ -282,9 +425,9 @@ function processDeviceData(data) {
     );
 
 
-    // --------------------------------------------------------
+    // ========================================================
     // FSR1
-    // --------------------------------------------------------
+    // ========================================================
 
     if (
         data.fsr1 !== undefined &&
@@ -298,9 +441,9 @@ function processDeviceData(data) {
     }
 
 
-    // --------------------------------------------------------
+    // ========================================================
     // FSR2
-    // --------------------------------------------------------
+    // ========================================================
 
     if (
         data.fsr2 !== undefined &&
@@ -314,23 +457,24 @@ function processDeviceData(data) {
     }
 
 
-    // --------------------------------------------------------
+    // ========================================================
     // CAP STATUS
-    // --------------------------------------------------------
+    // ========================================================
 
     if (
-        data.cap !== undefined
+        data.cap !== undefined &&
+        data.cap !== null
     ) {
 
         updateCapStatus(
-            data.cap
+            Boolean(data.cap)
         );
     }
 
 
-    // --------------------------------------------------------
+    // ========================================================
     // ANGLE
-    // --------------------------------------------------------
+    // ========================================================
 
     if (
         data.angle !== undefined &&
@@ -343,9 +487,9 @@ function processDeviceData(data) {
     }
 
 
-    // --------------------------------------------------------
+    // ========================================================
     // DOSE
-    // --------------------------------------------------------
+    // ========================================================
 
     if (
         data.dose !== undefined &&
@@ -358,9 +502,9 @@ function processDeviceData(data) {
     }
 
 
-    // --------------------------------------------------------
+    // ========================================================
     // IMU
-    // --------------------------------------------------------
+    // ========================================================
 
     if (
         data.angle !== undefined &&
@@ -373,44 +517,51 @@ function processDeviceData(data) {
     }
 
 
-    // --------------------------------------------------------
+    // ========================================================
     // INJECTION STATUS
-    // --------------------------------------------------------
+    // ========================================================
 
     if (
-        data.status !== undefined
+        data.status !== undefined &&
+        data.status !== null
     ) {
 
         setInjectionStatus(
             data.status
         );
-    }
 
 
-    // --------------------------------------------------------
-    // INJECTION COMPLETED
-    // --------------------------------------------------------
+        // ----------------------------------------------------
+        // Register completed injection only once
+        // ----------------------------------------------------
 
-    if (
-        data.status === "completed" &&
-        data.valid !== false
-    ) {
+        if (
+            data.status === "completed" &&
+            data.valid !== false &&
+            lastInjectionStatus !== "completed"
+        ) {
 
-        registerInjection(data);
-    }
+            registerInjection(data);
+        }
 
 
-    // --------------------------------------------------------
-    // INVALID INJECTION
-    // --------------------------------------------------------
+        // ----------------------------------------------------
+        // Invalid injection
+        // ----------------------------------------------------
 
-    if (
-        data.status === "invalid"
-    ) {
+        if (
+            data.status === "invalid"
+        ) {
 
-        updateSystemMessage(
-            "تزریق نامعتبر تشخیص داده شد."
-        );
+            updateSystemMessage(
+                "تزریق نامعتبر تشخیص داده شد."
+            );
+        }
+
+
+        // ذخیره وضعیت فعلی
+        lastInjectionStatus =
+            data.status;
     }
 }
 
@@ -429,11 +580,16 @@ function setConnectionStatus(
             "connectionStatus"
         );
 
+
     const text =
         document.getElementById(
             "connectionText"
         );
 
+
+    // --------------------------------------------------------
+    // Status indicator
+    // --------------------------------------------------------
 
     if (status) {
 
@@ -460,6 +616,10 @@ function setConnectionStatus(
     }
 
 
+    // --------------------------------------------------------
+    // Status text
+    // --------------------------------------------------------
+
     if (text) {
 
         text.textContent =
@@ -481,6 +641,7 @@ function updateCapStatus(
             "capStatus"
         );
 
+
     if (!element) {
         return;
     }
@@ -491,9 +652,11 @@ function updateCapStatus(
         element.textContent =
             "متصل";
 
+
         element.classList.add(
             "active"
         );
+
 
         element.classList.remove(
             "inactive"
@@ -504,9 +667,11 @@ function updateCapStatus(
         element.textContent =
             "جدا شده";
 
+
         element.classList.remove(
             "active"
         );
+
 
         element.classList.add(
             "inactive"
@@ -524,26 +689,24 @@ function updateAngle(
 ) {
 
     angle =
-        Number(angle) || 0;
+        Number(angle);
 
+
+    if (!Number.isFinite(angle)) {
+
+        angle = 0;
+    }
+
+
+    // --------------------------------------------------------
+    // Main angle
+    // --------------------------------------------------------
 
     const angleValue =
         document.getElementById(
             "angleValue"
         );
 
-    const anglePercent =
-        document.getElementById(
-            "anglePercent"
-        );
-
-    const angleProgress =
-        document.getElementById(
-            "angleProgress"
-        );
-
-
-    // Main angle value
 
     if (angleValue) {
 
@@ -552,32 +715,56 @@ function updateAngle(
     }
 
 
-    // Percentage for progress bar
+    // --------------------------------------------------------
+    // Percentage
+    // --------------------------------------------------------
+
+    const anglePercent =
+        document.getElementById(
+            "anglePercent"
+        );
+
 
     if (anglePercent) {
 
         let percent =
             (Math.abs(angle) / 360) * 100;
 
-        // Maximum 100 for visual progress
 
         percent =
-            Math.min(percent, 100);
+            Math.min(
+                percent,
+                100
+            );
+
 
         anglePercent.textContent =
             percent.toFixed(0) + "%";
     }
 
 
+    // --------------------------------------------------------
     // Progress bar
+    // --------------------------------------------------------
+
+    const angleProgress =
+        document.getElementById(
+            "angleProgress"
+        );
+
 
     if (angleProgress) {
 
         let percent =
             (Math.abs(angle) / 360) * 100;
 
+
         percent =
-            Math.min(percent, 100);
+            Math.min(
+                percent,
+                100
+            );
+
 
         angleProgress.style.width =
             percent + "%";
@@ -599,13 +786,30 @@ function updateFSR(
             elementId
         );
 
+
     if (!element) {
         return;
     }
 
 
-    element.textContent =
-        Number(value).toFixed(0);
+    const numericValue =
+        Number(value);
+
+
+    if (
+        Number.isFinite(
+            numericValue
+        )
+    ) {
+
+        element.textContent =
+            numericValue.toFixed(0);
+
+    } else {
+
+        element.textContent =
+            "0";
+    }
 }
 
 
@@ -618,13 +822,24 @@ function updateDose(
 ) {
 
     dose =
-        Number(dose) || 0;
+        Number(dose);
 
+
+    if (!Number.isFinite(dose)) {
+
+        dose = 0;
+    }
+
+
+    // --------------------------------------------------------
+    // Monitoring page
+    // --------------------------------------------------------
 
     const doseValue =
         document.getElementById(
             "doseValue"
         );
+
 
     if (doseValue) {
 
@@ -633,12 +848,15 @@ function updateDose(
     }
 
 
-    // Dashboard - last dose
+    // --------------------------------------------------------
+    // Dashboard
+    // --------------------------------------------------------
 
     const lastDose =
         document.getElementById(
             "lastDose"
         );
+
 
     if (lastDose) {
 
@@ -656,16 +874,26 @@ function updateIMU(
     angle
 ) {
 
+    angle =
+        Number(angle);
+
+
+    if (!Number.isFinite(angle)) {
+
+        angle = 0;
+    }
+
+
     const imuValue =
         document.getElementById(
             "imuValue"
         );
 
+
     if (imuValue) {
 
         imuValue.textContent =
-            Number(angle).toFixed(1) +
-            "°";
+            angle.toFixed(1) + "°";
     }
 }
 
@@ -691,6 +919,7 @@ function setInjectionStatus(
 
     let text =
         "آماده";
+
 
     switch (status) {
 
@@ -751,6 +980,7 @@ function updateSystemMessage(
             "systemMessage"
         );
 
+
     if (element) {
 
         element.textContent =
@@ -760,7 +990,7 @@ function updateSystemMessage(
 
 
 // ============================================================
-// REGISTER COMPLETED INJECTION
+// REGISTER INJECTION
 // ============================================================
 
 function registerInjection(
@@ -770,12 +1000,22 @@ function registerInjection(
     const dose =
         Number(data.dose) || 0;
 
+
     const duration =
         Number(data.duration) || 0;
+
+
+    const angle =
+        Number(data.angle) || 0;
+
 
     const now =
         new Date();
 
+
+    // --------------------------------------------------------
+    // Create injection object
+    // --------------------------------------------------------
 
     const injection = {
 
@@ -783,8 +1023,7 @@ function registerInjection(
 
         duration: duration,
 
-        angle:
-            Number(data.angle) || 0,
+        angle: angle,
 
         time:
             now.toLocaleTimeString(
@@ -802,17 +1041,24 @@ function registerInjection(
     };
 
 
+    // --------------------------------------------------------
+    // Save latest injection
+    // --------------------------------------------------------
+
     lastInjection =
         injection;
 
+
+    // --------------------------------------------------------
+    // Add to history
+    // --------------------------------------------------------
 
     injectionHistory.unshift(
         injection
     );
 
 
-    // Keep last 50 injections
-
+    // فقط 50 مورد آخر
     if (
         injectionHistory.length > 50
     ) {
@@ -825,22 +1071,22 @@ function registerInjection(
     }
 
 
+    // --------------------------------------------------------
+    // Statistics
+    // --------------------------------------------------------
+
     totalDose += dose;
 
     injectionCount++;
 
 
-    // Update dashboard
+    // --------------------------------------------------------
+    // Update UI
+    // --------------------------------------------------------
 
     updateDashboard();
 
-
-    // Update statistics
-
     updateStatistics();
-
-
-    // Update history
 
     updateHistory();
 
@@ -863,12 +1109,15 @@ function registerInjection(
 
 function updateDashboard() {
 
+    // --------------------------------------------------------
     // Last dose
+    // --------------------------------------------------------
 
     const lastDose =
         document.getElementById(
             "lastDose"
         );
+
 
     if (
         lastDose &&
@@ -880,12 +1129,15 @@ function updateDashboard() {
     }
 
 
-    // Today injections
+    // --------------------------------------------------------
+    // Number of injections
+    // --------------------------------------------------------
 
     const todayInjections =
         document.getElementById(
             "todayInjections"
         );
+
 
     if (todayInjections) {
 
@@ -894,12 +1146,15 @@ function updateDashboard() {
     }
 
 
-    // Today total dose
+    // --------------------------------------------------------
+    // Total dose
+    // --------------------------------------------------------
 
     const todayTotalDose =
         document.getElementById(
             "todayTotalDose"
         );
+
 
     if (todayTotalDose) {
 
@@ -908,12 +1163,15 @@ function updateDashboard() {
     }
 
 
+    // --------------------------------------------------------
     // Last injection time
+    // --------------------------------------------------------
 
     const lastInjectionTime =
         document.getElementById(
             "lastInjectionTime"
         );
+
 
     if (
         lastInjectionTime &&
@@ -936,6 +1194,7 @@ function updateStatistics() {
         document.getElementById(
             "statisticsTotalDose"
         );
+
 
     const injectionCountElement =
         document.getElementById(
@@ -975,6 +1234,10 @@ function updateHistory() {
     }
 
 
+    // --------------------------------------------------------
+    // Empty history
+    // --------------------------------------------------------
+
     if (
         injectionHistory.length === 0
     ) {
@@ -990,8 +1253,16 @@ function updateHistory() {
     }
 
 
+    // --------------------------------------------------------
+    // Clear old history
+    // --------------------------------------------------------
+
     historyList.innerHTML = "";
 
+
+    // --------------------------------------------------------
+    // Create history items
+    // --------------------------------------------------------
 
     injectionHistory.forEach(
         (item, index) => {
@@ -1000,6 +1271,7 @@ function updateHistory() {
                 document.createElement(
                     "div"
                 );
+
 
             row.className =
                 "history-item";
@@ -1011,6 +1283,7 @@ function updateHistory() {
                     <strong>
                         تزریق ${index + 1}
                     </strong>
+
                     <div>
                         ${item.date}
                         -
@@ -1018,12 +1291,15 @@ function updateHistory() {
                     </div>
                 </div>
 
+
                 <div>
                     <strong>
                         ${item.dose.toFixed(2)}
                     </strong>
+
                     واحد
                 </div>
+
 
                 <div>
                     ${item.angle.toFixed(1)}°
@@ -1041,7 +1317,7 @@ function updateHistory() {
 
 
 // ============================================================
-// BLE DISCONNECT
+// BLE DISCONNECTED
 // ============================================================
 
 function onDisconnected() {
@@ -1068,13 +1344,14 @@ function onDisconnected() {
 
 
 // ============================================================
-// DISCONNECT MANUALLY
+// MANUAL DISCONNECT
 // ============================================================
 
 function disconnectDevice() {
 
     if (
         bleDevice &&
+        bleDevice.gatt &&
         bleDevice.gatt.connected
     ) {
 
@@ -1102,7 +1379,9 @@ document.addEventListener(
         );
 
 
+        // ----------------------------------------------------
         // Initial values
+        // ----------------------------------------------------
 
         updateAngle(0);
 
@@ -1110,10 +1389,12 @@ document.addEventListener(
 
         updateIMU(0);
 
+
         updateFSR(
             "fsr1Value",
             0
         );
+
 
         updateFSR(
             "fsr2Value",
@@ -1126,10 +1407,15 @@ document.addEventListener(
         );
 
 
+        // ----------------------------------------------------
+        // Initial dashboard
+        // ----------------------------------------------------
+
         updateDashboard();
 
         updateStatistics();
 
         updateHistory();
+
     }
 );
