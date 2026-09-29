@@ -1,128 +1,794 @@
 ```html
-<!-- ==============================
-     Injection Data
-     ============================== -->
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
 
-<h3 class="section-title"
-    style="margin-top:22px;">
+<head>
+    <meta charset="UTF-8">
 
-    اطلاعات تزریق
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
-</h3>
+    <meta name="theme-color"
+          content="#2563eb">
 
+    <meta name="description"
+          content="سامانه هوشمند پایش و مدیریت تزریق انسولین">
 
-<div class="sensor-grid">
+    <title>Smart Insulin Cap</title>
 
+    <link rel="stylesheet"
+          href="style.css">
+</head>
 
-    <!-- Cap Status -->
+<body>
 
-    <div class="sensor-card">
+<div class="app">
 
-        <div class="sensor-name">
-            وضعیت درپوش
-        </div>
+    <!-- ==============================
+         HEADER
+         ============================== -->
 
-        <div class="sensor-value"
-             id="capStatusValue">
+    <header class="header">
 
-            متصل
+        <div class="header-content">
 
-        </div>
+            <div>
 
-        <div class="sensor-unit">
-            وضعیت اتصال
-        </div>
+                <div class="header-title">
+                    درپوش هوشمند
+                </div>
 
-    </div>
+                <div class="header-subtitle">
+                    سامانه مدیریت تزریق انسولین
+                </div>
 
+            </div>
 
-    <!-- Injection Status -->
+            <div id="connectionStatus"
+                 class="status connected">
 
-    <div class="sensor-card">
+                <span class="status-dot"></span>
 
-        <div class="sensor-name">
-            وضعیت تزریق
-        </div>
+                <span id="connectionText">
+                    آماده
+                </span>
 
-        <div class="sensor-value"
-             id="injectionStateValue">
-
-            آماده
-
-        </div>
-
-        <div class="sensor-unit">
-            فرآیند تزریق
-        </div>
-
-    </div>
-
-
-    <!-- Dose -->
-
-    <div class="sensor-card">
-
-        <div class="sensor-name">
-            دوز تخمینی
-        </div>
-
-        <div class="sensor-value"
-             id="doseValue">
-
-            --
+            </div>
 
         </div>
 
-        <div class="sensor-unit">
-            واحد
-        </div>
-
-    </div>
+    </header>
 
 
-    <!-- Injection Duration -->
+    <!-- ==============================
+         MAIN CONTENT
+         ============================== -->
 
-    <div class="sensor-card">
-
-        <div class="sensor-name">
-            مدت تزریق
-        </div>
-
-        <div class="sensor-value"
-             id="durationValue">
-
-            --
-
-        </div>
-
-        <div class="sensor-unit">
-            زمان
-        </div>
-
-    </div>
+    <main class="main">
 
 
-    <!-- Injection Validity -->
+        <!-- ==============================
+             DASHBOARD
+             ============================== -->
 
-    <div class="sensor-card">
+        <section id="dashboardPage"
+                 class="page">
 
-        <div class="sensor-name">
-            اعتبار تزریق
-        </div>
+            <h2 class="section-title">
+                وضعیت امروز
+            </h2>
 
-        <div class="sensor-value"
-             id="validityValue">
+            <p class="section-subtitle">
+                خلاصه‌ای از وضعیت سیستم و تزریق‌های ثبت‌شده
+            </p>
 
-            --
 
-        </div>
+            <!-- Statistics -->
 
-        <div class="sensor-unit">
-            وضعیت ثبت
-        </div>
+            <div class="dashboard-grid">
 
-    </div>
 
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        💉
+                    </div>
+
+                    <div class="stat-value"
+                         id="lastDose">
+
+                        10
+
+                    </div>
+
+                    <div class="stat-label">
+                        آخرین دوز (واحد)
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        📅
+                    </div>
+
+                    <div class="stat-value"
+                         id="todayInjections">
+
+                        3
+
+                    </div>
+
+                    <div class="stat-label">
+                        تزریق امروز
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        📊
+                    </div>
+
+                    <div class="stat-value"
+                         id="todayTotalDose">
+
+                        28
+
+                    </div>
+
+                    <div class="stat-label">
+                        مجموع دوز امروز
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        ⏱️
+                    </div>
+
+                    <div class="stat-value"
+                         id="lastInjectionTime">
+
+                        08:30
+
+                    </div>
+
+                    <div class="stat-label">
+                        آخرین تزریق
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Device Status -->
+
+            <div class="card"
+                 style="margin-top:16px;">
+
+                <div class="card-title">
+                    وضعیت درپوش
+                </div>
+
+                <div style="
+                    display:flex;
+                    align-items:center;
+                    gap:12px;
+                ">
+
+                    <div class="stat-icon"
+                         style="margin-bottom:0;">
+
+                        ✓
+
+                    </div>
+
+                    <div>
+
+                        <strong id="capStatus">
+                            درپوش آماده است
+                        </strong>
+
+                        <div class="card-label">
+                            سیستم آماده دریافت اطلاعات تزریق است.
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Quick Action -->
+
+            <div class="card">
+
+                <div class="card-title">
+                    پایش لحظه‌ای
+                </div>
+
+                <p class="card-label"
+                   style="margin-bottom:16px;">
+
+                    برای مشاهده وضعیت حسگرها و فرآیند تزریق وارد بخش
+                    «تزریق» شوید.
+
+                </p>
+
+                <button class="btn btn-primary"
+                        onclick="showPage('injection')">
+
+                    مشاهده وضعیت تزریق
+
+                </button>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ==============================
+             INJECTION PAGE
+             ============================== -->
+
+        <section id="injectionPage"
+                 class="page"
+                 style="display:none;">
+
+            <h2 class="section-title">
+                پایش تزریق
+            </h2>
+
+            <p class="section-subtitle">
+                اطلاعات لحظه‌ای فرآیند تزریق
+            </p>
+
+
+            <!-- Injection Monitor -->
+
+            <div class="monitor">
+
+                <div class="monitor-header">
+
+                    <div class="monitor-title">
+                        وضعیت فرآیند
+                    </div>
+
+                    <div id="injectionStatus"
+                         class="status waiting">
+
+                        <span class="status-dot"></span>
+
+                        <span>
+                            آماده
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="monitor-value">
+
+                    <span id="angleValue"
+                          class="angle-value">
+
+                        0
+
+                    </span>
+
+                    <span class="angle-unit">
+                        درجه
+                    </span>
+
+                </div>
+
+
+                <div class="text-center text-muted">
+                    زاویه چرخش قلم
+                </div>
+
+
+                <div style="margin-top:22px;">
+
+                    <div style="
+                        display:flex;
+                        justify-content:space-between;
+                        margin-bottom:8px;
+                        font-size:12px;
+                    ">
+
+                        <span>
+                            پیشرفت چرخش
+                        </span>
+
+                        <span id="anglePercent">
+                            0%
+                        </span>
+
+                    </div>
+
+                    <div class="progress-container">
+
+                        <div id="angleProgress"
+                             class="progress-bar">
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Injection Data -->
+
+            <h3 class="section-title"
+                style="margin-top:22px;">
+
+                اطلاعات تزریق
+
+            </h3>
+
+
+            <div class="sensor-grid">
+
+
+                <!-- Cap Status -->
+
+                <div class="sensor-card">
+
+                    <div class="sensor-name">
+                        وضعیت درپوش
+                    </div>
+
+                    <div class="sensor-value"
+                         id="capStatusValue">
+
+                        جدا
+
+                    </div>
+
+                    <div class="sensor-unit">
+                        وضعیت اتصال
+                    </div>
+
+                </div>
+
+
+                <!-- Injection Status -->
+
+                <div class="sensor-card">
+
+                    <div class="sensor-name">
+                        وضعیت تزریق
+                    </div>
+
+                    <div class="sensor-value"
+                         id="injectionStateValue">
+
+                        غیرفعال
+
+                    </div>
+
+                    <div class="sensor-unit">
+                        وضعیت فرآیند
+                    </div>
+
+                </div>
+
+
+                <!-- Dose -->
+
+                <div class="sensor-card">
+
+                    <div class="sensor-name">
+                        دوز تخمینی
+                    </div>
+
+                    <div class="sensor-value"
+                         id="doseValue">
+
+                        --
+
+                    </div>
+
+                    <div class="sensor-unit">
+                        واحد
+                    </div>
+
+                </div>
+
+
+                <!-- Duration -->
+
+                <div class="sensor-card">
+
+                    <div class="sensor-name">
+                        مدت تزریق
+                    </div>
+
+                    <div class="sensor-value"
+                         id="durationValue">
+
+                        --
+
+                    </div>
+
+                    <div class="sensor-unit">
+                        ثانیه
+                    </div>
+
+                </div>
+
+
+                <!-- Validity -->
+
+                <div class="sensor-card">
+
+                    <div class="sensor-name">
+                        اعتبار تزریق
+                    </div>
+
+                    <div class="sensor-value"
+                         id="validityValue">
+
+                        --
+
+                    </div>
+
+                    <div class="sensor-unit">
+                        وضعیت ثبت
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- Injection Message -->
+
+            <div class="card"
+                 style="margin-top:16px;">
+
+                <div class="card-title">
+                    پیام سیستم
+                </div>
+
+                <div id="systemMessage"
+                     class="card-label">
+
+                    در انتظار شروع فرآیند تزریق...
+
+                </div>
+
+            </div>
+
+
+            <!-- Connection Button -->
+
+            <button id="connectButton"
+                    class="btn btn-primary"
+                    style="margin-top:4px;"
+                    onclick="connectDevice()">
+
+                اتصال به درپوش
+
+            </button>
+
+        </section>
+
+
+
+        <!-- ==============================
+             STATISTICS PAGE
+             ============================== -->
+
+        <section id="statisticsPage"
+                 class="page"
+                 style="display:none;">
+
+            <h2 class="section-title">
+                آمار مصرف
+            </h2>
+
+            <p class="section-subtitle">
+                بررسی روند تزریق و مقدار مصرف انسولین
+            </p>
+
+
+            <div class="card">
+
+                <div class="card-title">
+                    دوز تزریق‌شده
+                </div>
+
+                <div class="empty-state">
+
+                    <div class="empty-icon">
+                        📊
+                    </div>
+
+                    <div class="empty-title">
+                        نمودار مصرف
+                    </div>
+
+                    <div class="empty-text">
+
+                        نمودار روند دوزهای تزریق‌شده
+                        در این قسمت نمایش داده خواهد شد.
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="dashboard-grid">
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        💉
+                    </div>
+
+                    <div class="stat-value"
+                         id="statisticsTotalDose">
+
+                        28
+
+                    </div>
+
+                    <div class="stat-label">
+                        مجموع دوز
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        🔢
+                    </div>
+
+                    <div class="stat-value"
+                         id="statisticsInjectionCount">
+
+                        3
+
+                    </div>
+
+                    <div class="stat-label">
+                        تعداد تزریق
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ==============================
+             HISTORY PAGE
+             ============================== -->
+
+        <section id="historyPage"
+                 class="page"
+                 style="display:none;">
+
+            <h2 class="section-title">
+                تاریخچه تزریق
+            </h2>
+
+            <p class="section-subtitle">
+                سوابق تزریق‌های ثبت‌شده
+            </p>
+
+
+            <div id="historyList">
+
+
+                <div class="history-item">
+
+                    <div class="history-left">
+
+                        <div class="history-icon">
+                            💉
+                        </div>
+
+                        <div>
+
+                            <div class="history-dose">
+                                10 واحد
+                            </div>
+
+                            <div class="history-date">
+                                امروز، 08:30
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <span class="status connected">
+                        خودکار
+                    </span>
+
+                </div>
+
+
+
+                <div class="history-item">
+
+                    <div class="history-left">
+
+                        <div class="history-icon">
+                            💉
+                        </div>
+
+                        <div>
+
+                            <div class="history-dose">
+                                8 واحد
+                            </div>
+
+                            <div class="history-date">
+                                امروز، 14:10
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <span class="status connected">
+                        خودکار
+                    </span>
+
+                </div>
+
+
+
+                <div class="history-item">
+
+                    <div class="history-left">
+
+                        <div class="history-icon">
+                            💉
+                        </div>
+
+                        <div>
+
+                            <div class="history-dose">
+                                10 واحد
+                            </div>
+
+                            <div class="history-date">
+                                امروز، 21:20
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <span class="status connected">
+                        خودکار
+                    </span>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+
+    <!-- ==============================
+         BOTTOM NAVIGATION
+         ============================== -->
+
+    <nav class="bottom-nav">
+
+
+        <button class="nav-item active"
+                onclick="showPage('dashboard')">
+
+            <span class="nav-icon">
+                🏠
+            </span>
+
+            <span>
+                خانه
+            </span>
+
+        </button>
+
+
+        <button class="nav-item"
+                onclick="showPage('injection')">
+
+            <span class="nav-icon">
+                💉
+            </span>
+
+            <span>
+                تزریق
+            </span>
+
+        </button>
+
+
+        <button class="nav-item"
+                onclick="showPage('statistics')">
+
+            <span class="nav-icon">
+                📊
+            </span>
+
+            <span>
+                آمار
+            </span>
+
+        </button>
+
+
+        <button class="nav-item"
+                onclick="showPage('history')">
+
+            <span class="nav-icon">
+                📋
+            </span>
+
+            <span>
+                تاریخچه
+            </span>
+
+        </button>
+
+
+    </nav>
 
 </div>
+
+
+<!-- JavaScript -->
+
+<script src="script.js"></script>
+
+</body>
+
+</html>
 ```
+
+### حالا فقط این کار را انجام بده
+
+1. همین کد را جایگزین **`index.html`** کن.
+2. **`style.css` را اصلاً تغییر نده.**
+3. `script.js` که قبلاً گذاشتی را نگه دار.
+4. Commit کن.
+5. Vercel خودش Deploy می‌کند.
+6. بعد سایت را با **Ctrl + Shift + R** باز کن.
+
+این نسخه باید **همان ظاهر قبلی** را نگه دارد، چون ساختار قبلی داشبورد، کارت‌ها، منوی پایین، آمار و تاریخچه را حفظ کردم و فقط بخش FSRها را با کارت‌های جدید جایگزین کردم.
+
+**فعلاً ESP32 را تغییر نده.** بعد از اینکه ظاهر اپ درست شد، می‌رویم سراغ مرحله بعد: ارسال همین ۶ مقدار از ESP32 با BLE.
