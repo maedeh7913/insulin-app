@@ -1,145 +1,131 @@
-// ============================================================
-// Smart Insulin Cap - BLE Web App
-// Final Integrated Version
-// ============================================================
+// ==========================================
+// Smart Insulin Cap
+// Main Application Logic
+// ==========================================
 
 
-// ============================================================
-// BLE CONFIGURATION
-// ============================================================
-
-const SERVICE_UUID =
-    "12345678-1234-1234-1234-1234567890ab";
-
-const CHARACTERISTIC_UUID =
-    "abcdefab-1234-1234-1234-abcdefabcdef";
-
-
-// ============================================================
-// BLE VARIABLES
-// ============================================================
-
-let bleDevice = null;
-let bleCharacteristic = null;
-
-
-// ============================================================
-// APPLICATION DATA
-// ============================================================
-
-let lastInjection = null;
-
-let injectionHistory = [];
-
-let totalDose = 0;
-
-let injectionCount = 0;
-
-
-// برای جلوگیری از ثبت چندباره یک تزریق
-let lastInjectionStatus = "";
-
-
-// ============================================================
-// PAGE NAVIGATION
-// ============================================================
+// ==========================================
+// Page Navigation
+// ==========================================
 
 function showPage(pageName) {
 
-    // همه صفحات را غیرفعال کن
-    document.querySelectorAll(".page").forEach(page => {
-        page.classList.remove("active");
+    // همه صفحات
+    const pages = document.querySelectorAll(".page");
+
+    pages.forEach(function(page) {
+        page.style.display = "none";
     });
 
 
-    // صفحه موردنظر را فعال کن
-    const page =
-        document.getElementById(pageName);
+    // صفحه انتخاب‌شده
+    const selectedPage = document.getElementById(
+        pageName + "Page"
+    );
 
-
-    if (page) {
-
-        page.classList.add("active");
-
-    } else {
-
-        console.warn(
-            "Page not found:",
-            pageName
-        );
+    if (selectedPage) {
+        selectedPage.style.display = "block";
     }
+
+
+    // تغییر وضعیت منوی پایین
+    const navItems = document.querySelectorAll(".nav-item");
+
+    navItems.forEach(function(item) {
+        item.classList.remove("active");
+    });
+
+
+    // پیدا کردن دکمه مربوط به صفحه
+    const navButtons = document.querySelectorAll(".nav-item");
+
+    navButtons.forEach(function(button) {
+
+        const onclickValue =
+            button.getAttribute("onclick");
+
+        if (
+            onclickValue &&
+            onclickValue.includes("'" + pageName + "'")
+        ) {
+            button.classList.add("active");
+        }
+
+    });
+
 }
 
 
-// ============================================================
-// BLE CONNECT
-// ============================================================
+// ==========================================
+// Device Connection
+// ==========================================
 
 async function connectDevice() {
 
+    const connectionStatus =
+        document.getElementById("connectionStatus");
+
+    const connectionText =
+        document.getElementById("connectionText");
+
+    const systemMessage =
+        document.getElementById("systemMessage");
+
+
     try {
 
-        // ----------------------------------------------------
-        // Check Web Bluetooth
-        // ----------------------------------------------------
-
+        // بررسی پشتیبانی Web Bluetooth
         if (!navigator.bluetooth) {
 
-            alert(
-                "مرورگر شما از Web Bluetooth پشتیبانی نمی‌کند."
+            throw new Error(
+                "Web Bluetooth توسط این مرورگر پشتیبانی نمی‌شود."
             );
 
-            return;
         }
 
 
-        console.log(
-            "Requesting Bluetooth device..."
-        );
+        // وضعیت اتصال
+        if (connectionStatus) {
+            connectionStatus.className =
+                "status waiting";
+        }
+
+        if (connectionText) {
+            connectionText.textContent =
+                "در حال جستجوی درپوش...";
+        }
+
+        if (systemMessage) {
+            systemMessage.textContent =
+                "لطفاً در پنجره بازشده، SmartInsulinCap را انتخاب کنید.";
+        }
 
 
-        // ----------------------------------------------------
-        // Select device
-        // ----------------------------------------------------
+        // درخواست اتصال به ESP32
+       const device =
+    await navigator.bluetooth.requestDevice({
 
-        bleDevice =
-            await navigator.bluetooth.requestDevice({
-
-                filters: [
-                    {
-                        services: [SERVICE_UUID]
-                    }
+        filters: [
+            {
+                services: [
+                    "12345678-1234-1234-1234-1234567890ab"
                 ]
-            });
+            }
+        ]
+
+    });
+
 
 
         console.log(
             "Device selected:",
-            bleDevice.name
+            device.name
         );
 
 
-        // ----------------------------------------------------
-        // Disconnect listener
-        // ----------------------------------------------------
-
-        bleDevice.addEventListener(
-            "gattserverdisconnected",
-            onDisconnected
-        );
-
-
-        // ----------------------------------------------------
-        // Connect GATT
-        // ----------------------------------------------------
-
-        console.log(
-            "Connecting to GATT server..."
-        );
-
-
+        // اتصال به GATT
         const server =
-            await bleDevice.gatt.connect();
+            await device.gatt.connect();
 
 
         console.log(
@@ -147,1275 +133,372 @@ async function connectDevice() {
         );
 
 
-        // ----------------------------------------------------
-        // Get service
-        // ----------------------------------------------------
-
+        // دریافت Service
         const service =
             await server.getPrimaryService(
-                SERVICE_UUID
+                "12345678-1234-1234-1234-1234567890ab"
             );
 
 
-        console.log(
-            "Service found:",
-            service
-        );
-
-
-        // ----------------------------------------------------
-        // Get characteristic
-        // ----------------------------------------------------
-
-        bleCharacteristic =
+        // دریافت Characteristic
+        const characteristic =
             await service.getCharacteristic(
-                CHARACTERISTIC_UUID
+                "abcdefab-1234-1234-1234-abcdefabcdef"
             );
 
 
-        console.log(
-            "Characteristic found:",
-            bleCharacteristic
-        );
+        // فعال کردن دریافت Notification
+        await characteristic.startNotifications();
 
 
-        // ----------------------------------------------------
-        // Start notifications
-        // ----------------------------------------------------
-
-        await bleCharacteristic.startNotifications();
-
-
-        console.log(
-            "Notifications started successfully"
-        );
-
-
-        // ----------------------------------------------------
-        // Listen for BLE data
-        // ----------------------------------------------------
-
-        bleCharacteristic.addEventListener(
+        characteristic.addEventListener(
             "characteristicvaluechanged",
-            handleBLEData
-        );
+            function(event) {
+
+                const decoder =
+                    new TextDecoder("utf-8");
+
+                const value =
+                    decoder.decode(
+                        event.target.value
+                    );
 
 
-        // ----------------------------------------------------
-        // Update connection UI
-        // ----------------------------------------------------
-
-        setConnectionStatus(
-            true,
-            "درپوش متصل است"
-        );
+                console.log(
+                    "ESP32:",
+                    value
+                );
 
 
-        updateSystemMessage(
-            "اتصال به درپوش با موفقیت برقرار شد."
-        );
+                if (systemMessage) {
 
+                    systemMessage.textContent =
+                        "دریافت از درپوش: " + value;
 
-        // ----------------------------------------------------
-        // Read current value
-        // ----------------------------------------------------
+                }
 
-        try {
-
-            const value =
-                await bleCharacteristic.readValue();
-
-
-            const text =
-                decodeBLEValue(value);
-
-
-            console.log(
-                "Initial BLE value:",
-                text
-            );
-
-
-            if (text && text.trim() !== "") {
-
-                processBLEText(text);
             }
+        );
 
-        } catch (readError) {
 
-            console.log(
-                "Initial read not available:",
-                readError
-            );
+        // اتصال موفق
+        if (connectionStatus) {
+
+            connectionStatus.className =
+                "status connected";
+
         }
 
 
-    } catch (error) {
+        if (connectionText) {
+
+            connectionText.textContent =
+                "متصل";
+
+        }
+
+
+        if (systemMessage) {
+
+            systemMessage.textContent =
+                "درپوش هوشمند با موفقیت متصل شد.";
+
+        }
+
+
+        console.log(
+            "SmartInsulinCap connected successfully"
+        );
+
+    }
+
+
+    catch (error) {
 
         console.error(
-            "BLE CONNECTION ERROR:",
+            "BLE Connection Error:",
             error
         );
 
 
-        setConnectionStatus(
-            false,
-            "اتصال برقرار نشد"
-        );
+        if (connectionStatus) {
 
+            connectionStatus.className =
+                "status waiting";
 
-        updateSystemMessage(
-            "خطا در اتصال به درپوش: " +
-            error.message
-        );
-    }
-}
-
-
-// ============================================================
-// DECODE BLE DATA
-// ============================================================
-
-function decodeBLEValue(
-    value
-) {
-
-    try {
-
-        const decoder =
-            new TextDecoder("utf-8");
-
-
-        return decoder.decode(
-            value
-        );
-
-    } catch (error) {
-
-        console.error(
-            "BLE DECODE ERROR:",
-            error
-        );
-
-
-        return "";
-    }
-}
-
-
-// ============================================================
-// BLE NOTIFICATION HANDLER
-// ============================================================
-
-function handleBLEData(
-    event
-) {
-
-    try {
-
-        console.log(
-            "BLE notification received!"
-        );
-
-
-        // دریافت مقدار خام
-        const value =
-            event.target.value;
-
-
-        console.log(
-            "Raw BLE value:",
-            value
-        );
-
-
-        // تبدیل به متن
-        const text =
-            decodeBLEValue(value);
-
-
-        console.log(
-            "BLE TEXT:",
-            text
-        );
-
-
-        if (
-            !text ||
-            text.trim() === ""
-        ) {
-
-            console.log(
-                "BLE data is empty."
-            );
-
-            return;
         }
 
 
-        // پردازش JSON
-        processBLEText(text);
+        if (connectionText) {
 
+            connectionText.textContent =
+                "اتصال ناموفق";
 
-    } catch (error) {
-
-        console.error(
-            "BLE HANDLER ERROR:",
-            error
-        );
-    }
-}
-
-
-// ============================================================
-// PROCESS BLE TEXT
-// ============================================================
-
-function processBLEText(
-    text
-) {
-
-    try {
-
-        const data =
-            JSON.parse(text);
-
-
-        console.log(
-            "BLE JSON DATA:",
-            data
-        );
-
-
-        processDeviceData(data);
-
-
-    } catch (error) {
-
-        console.error(
-            "JSON PARSE ERROR:",
-            error
-        );
-
-
-        console.log(
-            "Received text:",
-            text
-        );
-    }
-}
-
-
-// ============================================================
-// PROCESS DEVICE DATA
-// ============================================================
-
-function processDeviceData(
-    data
-) {
-
-    if (!data) {
-        return;
-    }
-
-
-    console.log(
-        "Processing device data:",
-        data
-    );
-
-
-    // ========================================================
-    // FSR1
-    // ========================================================
-
-    if (
-        data.fsr1 !== undefined &&
-        data.fsr1 !== null
-    ) {
-
-        updateFSR(
-            "fsr1Value",
-            data.fsr1
-        );
-    }
-
-
-    // ========================================================
-    // FSR2
-    // ========================================================
-
-    if (
-        data.fsr2 !== undefined &&
-        data.fsr2 !== null
-    ) {
-
-        updateFSR(
-            "fsr2Value",
-            data.fsr2
-        );
-    }
-
-
-    // ========================================================
-    // CAP STATUS
-    // ========================================================
-
-    if (
-        data.cap !== undefined &&
-        data.cap !== null
-    ) {
-
-        updateCapStatus(
-            Boolean(data.cap)
-        );
-    }
-
-
-    // ========================================================
-    // ANGLE
-    // ========================================================
-
-    if (
-        data.angle !== undefined &&
-        data.angle !== null
-    ) {
-
-        updateAngle(
-            Number(data.angle)
-        );
-    }
-
-
-    // ========================================================
-    // DOSE
-    // ========================================================
-
-    if (
-        data.dose !== undefined &&
-        data.dose !== null
-    ) {
-
-        updateDose(
-            Number(data.dose)
-        );
-    }
-
-
-    // ========================================================
-    // IMU
-    // ========================================================
-
-    if (
-        data.angle !== undefined &&
-        data.angle !== null
-    ) {
-
-        updateIMU(
-            Number(data.angle)
-        );
-    }
-
-
-    // ========================================================
-    // INJECTION STATUS
-    // ========================================================
-
-    if (
-        data.status !== undefined &&
-        data.status !== null
-    ) {
-
-        setInjectionStatus(
-            data.status
-        );
-
-
-        // ----------------------------------------------------
-        // Register completed injection only once
-        // ----------------------------------------------------
-
-        if (
-            data.status === "completed" &&
-            data.valid !== false &&
-            lastInjectionStatus !== "completed"
-        ) {
-
-            registerInjection(data);
         }
 
 
-        // ----------------------------------------------------
-        // Invalid injection
-        // ----------------------------------------------------
+        if (systemMessage) {
 
-        if (
-            data.status === "invalid"
-        ) {
+            systemMessage.textContent =
+                "اتصال به درپوش انجام نشد.";
 
-            updateSystemMessage(
-                "تزریق نامعتبر تشخیص داده شد."
-            );
         }
 
-
-        // ذخیره وضعیت فعلی
-        lastInjectionStatus =
-            data.status;
     }
+
+
+
 }
 
 
-// ============================================================
-// CONNECTION STATUS
-// ============================================================
+// ==========================================
+// Update Angle
+// ==========================================
 
-function setConnectionStatus(
-    connected,
-    message
-) {
-
-    const status =
-        document.getElementById(
-            "connectionStatus"
-        );
-
-
-    const text =
-        document.getElementById(
-            "connectionText"
-        );
-
-
-    // --------------------------------------------------------
-    // Status indicator
-    // --------------------------------------------------------
-
-    if (status) {
-
-        if (connected) {
-
-            status.classList.add(
-                "connected"
-            );
-
-            status.classList.remove(
-                "disconnected"
-            );
-
-        } else {
-
-            status.classList.remove(
-                "connected"
-            );
-
-            status.classList.add(
-                "disconnected"
-            );
-        }
-    }
-
-
-    // --------------------------------------------------------
-    // Status text
-    // --------------------------------------------------------
-
-    if (text) {
-
-        text.textContent =
-            message;
-    }
-}
-
-
-// ============================================================
-// CAP STATUS
-// ============================================================
-
-function updateCapStatus(
-    connected
-) {
-
-    const element =
-        document.getElementById(
-            "capStatus"
-        );
-
-
-    if (!element) {
-        return;
-    }
-
-
-    if (connected) {
-
-        element.textContent =
-            "متصل";
-
-
-        element.classList.add(
-            "active"
-        );
-
-
-        element.classList.remove(
-            "inactive"
-        );
-
-    } else {
-
-        element.textContent =
-            "جدا شده";
-
-
-        element.classList.remove(
-            "active"
-        );
-
-
-        element.classList.add(
-            "inactive"
-        );
-    }
-}
-
-
-// ============================================================
-// ANGLE
-// ============================================================
-
-function updateAngle(
-    angle
-) {
-
-    angle =
-        Number(angle);
-
-
-    if (!Number.isFinite(angle)) {
-
-        angle = 0;
-    }
-
-
-    // --------------------------------------------------------
-    // Main angle
-    // --------------------------------------------------------
+function updateAngle(angle) {
 
     const angleValue =
-        document.getElementById(
-            "angleValue"
-        );
+        document.getElementById("angleValue");
+
+    const angleProgress =
+        document.getElementById("angleProgress");
+
+    const anglePercent =
+        document.getElementById("anglePercent");
 
 
     if (angleValue) {
 
         angleValue.textContent =
-            angle.toFixed(1) + "°";
+            Number(angle).toFixed(1);
+
     }
 
 
-    // --------------------------------------------------------
-    // Percentage
-    // --------------------------------------------------------
-
-    const anglePercent =
-        document.getElementById(
-            "anglePercent"
-        );
+    // محدود کردن زاویه برای نمایش Progress
+    let percent =
+        (Number(angle) / 360) * 100;
 
 
-    if (anglePercent) {
-
-        let percent =
-            (Math.abs(angle) / 360) * 100;
-
-
-        percent =
-            Math.min(
-                percent,
-                100
-            );
-
-
-        anglePercent.textContent =
-            percent.toFixed(0) + "%";
+    if (percent < 0) {
+        percent = 0;
     }
 
-
-    // --------------------------------------------------------
-    // Progress bar
-    // --------------------------------------------------------
-
-    const angleProgress =
-        document.getElementById(
-            "angleProgress"
-        );
+    if (percent > 100) {
+        percent = 100;
+    }
 
 
     if (angleProgress) {
 
-        let percent =
-            (Math.abs(angle) / 360) * 100;
-
-
-        percent =
-            Math.min(
-                percent,
-                100
-            );
-
-
         angleProgress.style.width =
             percent + "%";
+
     }
+
+
+    if (anglePercent) {
+
+        anglePercent.textContent =
+            Math.round(percent) + "%";
+
+    }
+
 }
 
 
-// ============================================================
-// FSR UPDATE
-// ============================================================
+// ==========================================
+// Update FSR Sensors
+// ==========================================
 
-function updateFSR(
-    elementId,
-    value
-) {
+function updateFSR(fsr1, fsr2) {
 
-    const element =
-        document.getElementById(
-            elementId
-        );
+    const fsr1Element =
+        document.getElementById("fsr1Value");
+
+    const fsr2Element =
+        document.getElementById("fsr2Value");
 
 
-    if (!element) {
+    if (fsr1Element) {
+
+        fsr1Element.textContent =
+            fsr1;
+
+    }
+
+
+    if (fsr2Element) {
+
+        fsr2Element.textContent =
+            fsr2;
+
+    }
+
+}
+
+
+// ==========================================
+// Update Dose
+// ==========================================
+
+function updateDose(dose) {
+
+    const doseElement =
+        document.getElementById("doseValue");
+
+    const lastDoseElement =
+        document.getElementById("lastDose");
+
+
+    if (doseElement) {
+
+        doseElement.textContent =
+            dose;
+
+    }
+
+
+    if (lastDoseElement) {
+
+        lastDoseElement.textContent =
+            dose;
+
+    }
+
+}
+
+
+// ==========================================
+// Update IMU
+// ==========================================
+
+function updateIMU(angle) {
+
+    const imuElement =
+        document.getElementById("imuValue");
+
+
+    if (imuElement) {
+
+        imuElement.textContent =
+            Number(angle).toFixed(1);
+
+    }
+
+}
+
+
+// ==========================================
+// Injection Status
+// ==========================================
+
+function setInjectionStatus(status) {
+
+    const injectionStatus =
+        document.getElementById("injectionStatus");
+
+    const systemMessage =
+        document.getElementById("systemMessage");
+
+
+    if (!injectionStatus) {
         return;
     }
 
 
-    const numericValue =
-        Number(value);
+    if (status === "ready") {
 
+        injectionStatus.className =
+            "status waiting";
 
-    if (
-        Number.isFinite(
-            numericValue
-        )
-    ) {
+        injectionStatus.innerHTML =
+            '<span class="status-dot"></span>' +
+            '<span>آماده</span>';
 
-        element.textContent =
-            numericValue.toFixed(0);
 
-    } else {
+        if (systemMessage) {
 
-        element.textContent =
-            "0";
-    }
-}
+            systemMessage.textContent =
+                "در انتظار شروع فرآیند تزریق...";
 
-
-// ============================================================
-// DOSE
-// ============================================================
-
-function updateDose(
-    dose
-) {
-
-    dose =
-        Number(dose);
-
-
-    if (!Number.isFinite(dose)) {
-
-        dose = 0;
-    }
-
-
-    // --------------------------------------------------------
-    // Monitoring page
-    // --------------------------------------------------------
-
-    const doseValue =
-        document.getElementById(
-            "doseValue"
-        );
-
-
-    if (doseValue) {
-
-        doseValue.textContent =
-            dose.toFixed(2);
-    }
-
-
-    // --------------------------------------------------------
-    // Dashboard
-    // --------------------------------------------------------
-
-    const lastDose =
-        document.getElementById(
-            "lastDose"
-        );
-
-
-    if (lastDose) {
-
-        lastDose.textContent =
-            dose.toFixed(2);
-    }
-}
-
-
-// ============================================================
-// IMU
-// ============================================================
-
-function updateIMU(
-    angle
-) {
-
-    angle =
-        Number(angle);
-
-
-    if (!Number.isFinite(angle)) {
-
-        angle = 0;
-    }
-
-
-    const imuValue =
-        document.getElementById(
-            "imuValue"
-        );
-
-
-    if (imuValue) {
-
-        imuValue.textContent =
-            angle.toFixed(1) + "°";
-    }
-}
-
-
-// ============================================================
-// INJECTION STATUS
-// ============================================================
-
-function setInjectionStatus(
-    status
-) {
-
-    const element =
-        document.getElementById(
-            "injectionStatus"
-        );
-
-
-    if (!element) {
-        return;
-    }
-
-
-    let text =
-        "آماده";
-
-
-    switch (status) {
-
-        case "ready":
-
-            text =
-                "آماده";
-
-            break;
-
-
-        case "injecting":
-
-            text =
-                "در حال تزریق";
-
-            break;
-
-
-        case "completed":
-
-            text =
-                "تزریق تکمیل شد";
-
-            break;
-
-
-        case "invalid":
-
-            text =
-                "تزریق نامعتبر";
-
-            break;
-
-
-        default:
-
-            text =
-                status;
-    }
-
-
-    element.textContent =
-        text;
-}
-
-
-// ============================================================
-// SYSTEM MESSAGE
-// ============================================================
-
-function updateSystemMessage(
-    message
-) {
-
-    const element =
-        document.getElementById(
-            "systemMessage"
-        );
-
-
-    if (element) {
-
-        element.textContent =
-            message;
-    }
-}
-
-
-// ============================================================
-// REGISTER INJECTION
-// ============================================================
-
-function registerInjection(
-    data
-) {
-
-    const dose =
-        Number(data.dose) || 0;
-
-
-    const duration =
-        Number(data.duration) || 0;
-
-
-    const angle =
-        Number(data.angle) || 0;
-
-
-    const now =
-        new Date();
-
-
-    // --------------------------------------------------------
-    // Create injection object
-    // --------------------------------------------------------
-
-    const injection = {
-
-        dose: dose,
-
-        duration: duration,
-
-        angle: angle,
-
-        time:
-            now.toLocaleTimeString(
-                "fa-IR",
-                {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                }
-            ),
-
-        date:
-            now.toLocaleDateString(
-                "fa-IR"
-            )
-    };
-
-
-    // --------------------------------------------------------
-    // Save latest injection
-    // --------------------------------------------------------
-
-    lastInjection =
-        injection;
-
-
-    // --------------------------------------------------------
-    // Add to history
-    // --------------------------------------------------------
-
-    injectionHistory.unshift(
-        injection
-    );
-
-
-    // فقط 50 مورد آخر
-    if (
-        injectionHistory.length > 50
-    ) {
-
-        injectionHistory =
-            injectionHistory.slice(
-                0,
-                50
-            );
-    }
-
-
-    // --------------------------------------------------------
-    // Statistics
-    // --------------------------------------------------------
-
-    totalDose += dose;
-
-    injectionCount++;
-
-
-    // --------------------------------------------------------
-    // Update UI
-    // --------------------------------------------------------
-
-    updateDashboard();
-
-    updateStatistics();
-
-    updateHistory();
-
-
-    updateSystemMessage(
-        "تزریق با موفقیت ثبت شد."
-    );
-
-
-    console.log(
-        "Injection registered:",
-        injection
-    );
-}
-
-
-// ============================================================
-// DASHBOARD
-// ============================================================
-
-function updateDashboard() {
-
-    // --------------------------------------------------------
-    // Last dose
-    // --------------------------------------------------------
-
-    const lastDose =
-        document.getElementById(
-            "lastDose"
-        );
-
-
-    if (
-        lastDose &&
-        lastInjection
-    ) {
-
-        lastDose.textContent =
-            lastInjection.dose.toFixed(2);
-    }
-
-
-    // --------------------------------------------------------
-    // Number of injections
-    // --------------------------------------------------------
-
-    const todayInjections =
-        document.getElementById(
-            "todayInjections"
-        );
-
-
-    if (todayInjections) {
-
-        todayInjections.textContent =
-            injectionCount;
-    }
-
-
-    // --------------------------------------------------------
-    // Total dose
-    // --------------------------------------------------------
-
-    const todayTotalDose =
-        document.getElementById(
-            "todayTotalDose"
-        );
-
-
-    if (todayTotalDose) {
-
-        todayTotalDose.textContent =
-            totalDose.toFixed(2);
-    }
-
-
-    // --------------------------------------------------------
-    // Last injection time
-    // --------------------------------------------------------
-
-    const lastInjectionTime =
-        document.getElementById(
-            "lastInjectionTime"
-        );
-
-
-    if (
-        lastInjectionTime &&
-        lastInjection
-    ) {
-
-        lastInjectionTime.textContent =
-            lastInjection.time;
-    }
-}
-
-
-// ============================================================
-// STATISTICS
-// ============================================================
-
-function updateStatistics() {
-
-    const totalDoseElement =
-        document.getElementById(
-            "statisticsTotalDose"
-        );
-
-
-    const injectionCountElement =
-        document.getElementById(
-            "statisticsInjectionCount"
-        );
-
-
-    if (totalDoseElement) {
-
-        totalDoseElement.textContent =
-            totalDose.toFixed(2);
-    }
-
-
-    if (injectionCountElement) {
-
-        injectionCountElement.textContent =
-            injectionCount;
-    }
-}
-
-
-// ============================================================
-// HISTORY
-// ============================================================
-
-function updateHistory() {
-
-    const historyList =
-        document.getElementById(
-            "historyList"
-        );
-
-
-    if (!historyList) {
-        return;
-    }
-
-
-    // --------------------------------------------------------
-    // Empty history
-    // --------------------------------------------------------
-
-    if (
-        injectionHistory.length === 0
-    ) {
-
-        historyList.innerHTML =
-            `
-            <div class="empty-state">
-                هنوز تزریقی ثبت نشده است.
-            </div>
-            `;
-
-        return;
-    }
-
-
-    // --------------------------------------------------------
-    // Clear old history
-    // --------------------------------------------------------
-
-    historyList.innerHTML = "";
-
-
-    // --------------------------------------------------------
-    // Create history items
-    // --------------------------------------------------------
-
-    injectionHistory.forEach(
-        (item, index) => {
-
-            const row =
-                document.createElement(
-                    "div"
-                );
-
-
-            row.className =
-                "history-item";
-
-
-            row.innerHTML = `
-
-                <div>
-                    <strong>
-                        تزریق ${index + 1}
-                    </strong>
-
-                    <div>
-                        ${item.date}
-                        -
-                        ${item.time}
-                    </div>
-                </div>
-
-
-                <div>
-                    <strong>
-                        ${item.dose.toFixed(2)}
-                    </strong>
-
-                    واحد
-                </div>
-
-
-                <div>
-                    ${item.angle.toFixed(1)}°
-                </div>
-
-            `;
-
-
-            historyList.appendChild(
-                row
-            );
         }
-    );
-}
 
-
-// ============================================================
-// BLE DISCONNECTED
-// ============================================================
-
-function onDisconnected() {
-
-    console.log(
-        "BLE device disconnected"
-    );
-
-
-    setConnectionStatus(
-        false,
-        "درپوش قطع شد"
-    );
-
-
-    updateSystemMessage(
-        "ارتباط با درپوش قطع شد."
-    );
-
-
-    bleCharacteristic =
-        null;
-}
-
-
-// ============================================================
-// MANUAL DISCONNECT
-// ============================================================
-
-function disconnectDevice() {
-
-    if (
-        bleDevice &&
-        bleDevice.gatt &&
-        bleDevice.gatt.connected
-    ) {
-
-        bleDevice.gatt.disconnect();
-
-    } else {
-
-        console.log(
-            "Device is already disconnected."
-        );
     }
+
+
+    else if (status === "injecting") {
+
+        injectionStatus.className =
+            "status connected";
+
+        injectionStatus.innerHTML =
+            '<span class="status-dot"></span>' +
+            '<span>در حال تزریق</span>';
+
+
+        if (systemMessage) {
+
+            systemMessage.textContent =
+                "فرآیند تزریق شناسایی شد.";
+
+        }
+
+    }
+
+
+    else if (status === "completed") {
+
+        injectionStatus.className =
+            "status connected";
+
+        injectionStatus.innerHTML =
+            '<span class="status-dot"></span>' +
+            '<span>تزریق کامل شد</span>';
+
+
+        if (systemMessage) {
+
+            systemMessage.textContent =
+                "تزریق با موفقیت ثبت شد.";
+
+        }
+
+    }
+
 }
 
 
-// ============================================================
-// INITIALIZATION
-// ============================================================
+// ==========================================
+// Initial Application State
+// ==========================================
 
 document.addEventListener(
     "DOMContentLoaded",
-    function () {
+    function() {
 
-        console.log(
-            "Smart Insulin Cap app initialized."
-        );
+        // صفحه پیش‌فرض
+        showPage("dashboard");
 
 
-        // ----------------------------------------------------
-        // Initial values
-        // ----------------------------------------------------
-
+        // مقدار اولیه زاویه
         updateAngle(0);
 
-        updateDose(0);
 
+        // وضعیت اولیه تزریق
+        setInjectionStatus("ready");
+
+
+        // مقادیر اولیه حسگرها
+        updateFSR("--", "--");
+
+
+        // مقدار اولیه IMU
         updateIMU(0);
 
 
-        updateFSR(
-            "fsr1Value",
-            0
-        );
-
-
-        updateFSR(
-            "fsr2Value",
-            0
-        );
-
-
-        setInjectionStatus(
-            "ready"
-        );
-
-
-        // ----------------------------------------------------
-        // Initial dashboard
-        // ----------------------------------------------------
-
-        updateDashboard();
-
-        updateStatistics();
-
-        updateHistory();
+        // مقدار اولیه دوز
+        updateDose("--");
 
     }
 );
