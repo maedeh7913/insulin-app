@@ -93,8 +93,9 @@ async function connectDevice() {
         // Preserve the existing service-filtered device chooser; do not create a second connection flow.
         if (!bleDevice) {
             bleDevice = await navigator.bluetooth.requestDevice({
-                filters: [{ services: [SERVICE_UUID] }]
-            });
+    acceptAllDevices: true,
+    optionalServices: [SERVICE_UUID]
+});
             bleDevice.addEventListener("gattserverdisconnected", handleDisconnect);
         }
 
