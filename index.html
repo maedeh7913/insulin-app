@@ -96,7 +96,7 @@
                     <div class="stat-value"
                          id="lastDose">
 
-                        10
+                        --
 
                     </div>
 
@@ -116,7 +116,7 @@
                     <div class="stat-value"
                          id="todayInjections">
 
-                        3
+                        --
 
                     </div>
 
@@ -136,7 +136,7 @@
                     <div class="stat-value"
                          id="todayTotalDose">
 
-                        28
+                        --
 
                     </div>
 
@@ -156,7 +156,7 @@
                     <div class="stat-value"
                          id="lastInjectionTime">
 
-                        08:30
+                        --
 
                     </div>
 
@@ -250,7 +250,7 @@
             </h2>
 
             <p class="section-subtitle">
-                اطلاعات لحظه‌ای حسگرها و فرآیند تزریق
+                اطلاعات لحظه‌ای فرآیند تزریق
             </p>
 
 
@@ -332,12 +332,12 @@
             </div>
 
 
-            <!-- Sensor Data -->
+            <!-- Injection Data -->
 
             <h3 class="section-title"
                 style="margin-top:22px;">
 
-                اطلاعات حسگرها
+                اطلاعات تزریق
 
             </h3>
 
@@ -345,70 +345,56 @@
             <div class="sensor-grid">
 
 
+                <!-- Cap Status -->
+
                 <div class="sensor-card">
 
                     <div class="sensor-name">
-                        FSR 1
+                        وضعیت درپوش
                     </div>
 
                     <div class="sensor-value"
-                         id="fsr1Value">
+                         id="capStatusValue">
 
-                        --
+                        جدا
 
                     </div>
 
                     <div class="sensor-unit">
-                        ADC
+                        وضعیت اتصال
                     </div>
 
                 </div>
 
 
+                <!-- Injection Status -->
+
                 <div class="sensor-card">
 
                     <div class="sensor-name">
-                        FSR 2
+                        وضعیت تزریق
                     </div>
 
                     <div class="sensor-value"
-                         id="fsr2Value">
+                         id="injectionStateValue">
 
-                        --
+                        غیرفعال
 
                     </div>
 
                     <div class="sensor-unit">
-                        ADC
+                        وضعیت فرآیند
                     </div>
 
                 </div>
 
 
-                <div class="sensor-card">
-
-                    <div class="sensor-name">
-                        IMU
-                    </div>
-
-                    <div class="sensor-value"
-                         id="imuValue">
-
-                        --
-
-                    </div>
-
-                    <div class="sensor-unit">
-                        درجه
-                    </div>
-
-                </div>
-
+                <!-- Dose -->
 
                 <div class="sensor-card">
 
                     <div class="sensor-name">
-                        دوز تشخیص داده‌شده
+                        دوز تخمینی
                     </div>
 
                     <div class="sensor-value"
@@ -423,6 +409,51 @@
                     </div>
 
                 </div>
+
+
+                <!-- Duration -->
+
+                <div class="sensor-card">
+
+                    <div class="sensor-name">
+                        مدت تزریق
+                    </div>
+
+                    <div class="sensor-value"
+                         id="durationValue">
+
+                        --
+
+                    </div>
+
+                    <div class="sensor-unit">
+                        ثانیه
+                    </div>
+
+                </div>
+
+
+                <!-- Validity -->
+
+                <div class="sensor-card">
+
+                    <div class="sensor-name">
+                        اعتبار تزریق
+                    </div>
+
+                    <div class="sensor-value"
+                         id="validityValue">
+
+                        --
+
+                    </div>
+
+                    <div class="sensor-unit">
+                        وضعیت ثبت
+                    </div>
+
+                </div>
+
 
             </div>
 
@@ -518,7 +549,7 @@
                     <div class="stat-value"
                          id="statisticsTotalDose">
 
-                        28
+                        --
 
                     </div>
 
@@ -538,7 +569,7 @@
                     <div class="stat-value"
                          id="statisticsInjectionCount">
 
-                        3
+                        --
 
                     </div>
 
@@ -572,97 +603,7 @@
 
 
             <div id="historyList">
-
-
-                <div class="history-item">
-
-                    <div class="history-left">
-
-                        <div class="history-icon">
-                            💉
-                        </div>
-
-                        <div>
-
-                            <div class="history-dose">
-                                10 واحد
-                            </div>
-
-                            <div class="history-date">
-                                امروز، 08:30
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <span class="status connected">
-                        خودکار
-                    </span>
-
-                </div>
-
-
-
-                <div class="history-item">
-
-                    <div class="history-left">
-
-                        <div class="history-icon">
-                            💉
-                        </div>
-
-                        <div>
-
-                            <div class="history-dose">
-                                8 واحد
-                            </div>
-
-                            <div class="history-date">
-                                امروز، 14:10
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <span class="status connected">
-                        خودکار
-                    </span>
-
-                </div>
-
-
-
-                <div class="history-item">
-
-                    <div class="history-left">
-
-                        <div class="history-icon">
-                            💉
-                        </div>
-
-                        <div>
-
-                            <div class="history-dose">
-                                10 واحد
-                            </div>
-
-                            <div class="history-date">
-                                امروز، 21:20
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <span class="status connected">
-                        خودکار
-                    </span>
-
-                </div>
-
-
+                <div class="empty-state"><div class="empty-title">هنوز تزریق ثبت‌شده‌ای دریافت نشده است.</div></div>
             </div>
 
         </section>
@@ -746,3 +687,17 @@
 </body>
 
 </html>
+```
+
+### حالا فقط این کار را انجام بده
+
+1. همین کد را جایگزین **`index.html`** کن.
+2. **`style.css` را اصلاً تغییر نده.**
+3. `script.js` که قبلاً گذاشتی را نگه دار.
+4. Commit کن.
+5. Vercel خودش Deploy می‌کند.
+6. بعد سایت را با **Ctrl + Shift + R** باز کن.
+
+این نسخه باید **همان ظاهر قبلی** را نگه دارد، چون ساختار قبلی داشبورد، کارت‌ها، منوی پایین، آمار و تاریخچه را حفظ کردم و فقط بخش FSRها را با کارت‌های جدید جایگزین کردم.
+
+**فعلاً ESP32 را تغییر نده.** بعد از اینکه ظاهر اپ درست شد، می‌رویم سراغ مرحله بعد: ارسال همین ۶ مقدار از ESP32 با BLE.
