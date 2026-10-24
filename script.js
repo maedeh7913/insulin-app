@@ -18,7 +18,32 @@ let appData = {
     injectionInvalid: null
 };
 
-const historyRecords = [];
+const HISTORY_STORAGE_KEY = "smartInsulinCapHistory";
+
+function loadHistoryRecords() {
+    try {
+        const saved = localStorage.getItem(HISTORY_STORAGE_KEY);
+        if (!saved) return [];
+        const records = JSON.parse(saved);
+        return Array.isArray(records) ? records : [];
+    } catch (error) {
+        console.warn("[HISTORY] Could not load saved history:", error);
+        return [];
+    }
+}
+
+function saveHistoryRecords() {
+    try {
+        localStorage.setItem(
+            HISTORY_STORAGE_KEY,
+            JSON.stringify(historyRecords)
+        );
+    } catch (error) {
+        console.warn("[HISTORY] Could not save history:", error);
+    }
+}
+
+const historyRecords = loadHistoryRecords();
 let previousFirmwareStatus = null;
 let latestValidDose = null;
 let latestValidAngle = null;
@@ -574,6 +599,7 @@ function maybeRecordCompletedInjection(payload) {
     };
 
     historyRecords.unshift(record);
+    saveHistoryRecords();
 
     renderHistory();
     updateDashboardFromHistory();
@@ -875,6 +901,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setSystemMessage({});
     renderHistory();
+    updateDashboardFromHistory();
 });
 
 window.connectDevice = connectDevice;
