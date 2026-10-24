@@ -21,31 +21,7 @@ let appData = {
     injectionInvalid: null
 };
 
-const HISTORY_STORAGE_KEY = "smartInsulinCap.history.v1";
-
-// Load previously saved history without changing the rest of the application.
-function loadHistoryRecords() {
-    try {
-        const saved = localStorage.getItem(HISTORY_STORAGE_KEY);
-        if (!saved) return [];
-        const parsed = JSON.parse(saved);
-        return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-        console.warn("[HISTORY] Could not load saved history:", error);
-        return [];
-    }
-}
-
-const historyRecords = loadHistoryRecords();
-
-// Persist history whenever a new record is added.
-function saveHistoryRecords() {
-    try {
-        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(historyRecords));
-    } catch (error) {
-        console.error("[HISTORY] Could not save history:", error);
-    }
-}
+const historyRecords = [];
 let previousInjectionActive = null;
 let latestValidDose = null;
 let latestValidAngle = null;
@@ -370,7 +346,6 @@ function maybeRecordCompletedInjection(payload) {
         firmwareConfirmed: true
     };
     historyRecords.unshift(record);
-    saveHistoryRecords();
     renderHistory();
     updateDashboardFromHistory();
     console.info("[HISTORY] Added candidate completed injection:", record);
@@ -503,7 +478,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if ($("validityValue")) $("validityValue").textContent = "--";
     setSystemMessage({});
     renderHistory();
-    updateDashboardFromHistory();
 });
 
 // Make the existing inline HTML handlers available in classic script context.
