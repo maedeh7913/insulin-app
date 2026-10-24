@@ -23,21 +23,13 @@ let appData = {
 
 const HISTORY_STORAGE_KEY = "smartInsulinCap.history.v1";
 
-// Load saved records before the UI is rendered. If storage is unavailable or
-// corrupted, start safely with an empty history without crashing the app.
+// Load previously saved history without changing the rest of the application.
 function loadHistoryRecords() {
     try {
         const saved = localStorage.getItem(HISTORY_STORAGE_KEY);
         if (!saved) return [];
         const parsed = JSON.parse(saved);
-        if (!Array.isArray(parsed)) return [];
-        return parsed.filter(record =>
-            record &&
-            typeof record.dose === "number" &&
-            Number.isFinite(record.dose) &&
-            typeof record.timestamp === "number" &&
-            Number.isFinite(record.timestamp)
-        );
+        return Array.isArray(parsed) ? parsed : [];
     } catch (error) {
         console.warn("[HISTORY] Could not load saved history:", error);
         return [];
@@ -46,14 +38,12 @@ function loadHistoryRecords() {
 
 const historyRecords = loadHistoryRecords();
 
+// Persist history whenever a new record is added.
 function saveHistoryRecords() {
     try {
         localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(historyRecords));
-        return true;
     } catch (error) {
-        console.error("[HISTORY] Could not save history to this browser:", error);
-        setSystemMessage("ذخیره تاریخچه در مرورگر انجام نشد؛ فضای ذخیره‌سازی یا تنظیمات مرورگر را بررسی کنید.");
-        return false;
+        console.error("[HISTORY] Could not save history:", error);
     }
 }
 let previousInjectionActive = null;
