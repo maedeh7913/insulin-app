@@ -1065,3 +1065,39 @@ button {
     z-index: 1000;
   }
 }
+/* رفع محدودیت اسکرول در کل صفحه */
+html,
+body {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+body {
+  position: relative !important;
+}
+
+.page {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+#glucosePage,
+#glucoseFeature {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  padding-bottom: 120px !important;
+}
+
+.bottom-nav {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+}
