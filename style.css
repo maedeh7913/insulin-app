@@ -717,3 +717,83 @@ button {
         border-radius: 18px;
     }
 }
+
+/* =========================================
+   Colorful Bottom Navigation
+   ========================================= */
+
+.bottom-nav {
+    background: rgba(255, 255, 255, 0.98);
+    border-top: 1px solid #e0e7ff;
+    box-shadow: 0 -5px 24px rgba(37, 99, 235, 0.10);
+    padding: 9px 8px calc(9px + env(safe-area-inset-bottom));
+    gap: 6px;
+}
+
+.nav-item {
+    position: relative;
+    min-height: 57px;
+    gap: 5px;
+    padding: 7px 3px;
+    border-radius: 15px;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 600;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.nav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 31px;
+    border-radius: 11px;
+    font-size: 19px;
+    transition: transform 0.2s ease;
+}
+
+/* رنگ جداگانه برای هر صفحه */
+.nav-item:nth-child(1) .nav-icon {
+    background: #dbeafe;
+}
+
+.nav-item:nth-child(2) .nav-icon {
+    background: #dcfce7;
+}
+
+.nav-item:nth-child(3) .nav-icon {
+    background: #fef3c7;
+}
+
+.nav-item:nth-child(4) .nav-icon {
+    background: #f3e8ff;
+}
+
+/* صفحه فعال */
+.nav-item.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.nav-item.active .nav-icon {
+    background: rgba(255, 255, 255, 0.20);
+    transform: translateY(-1px);
+}
+
+/* لمس دکمه‌ها */
+.nav-item:active {
+    transform: scale(0.96);
+}
+
+/* جلوگیری از تغییر ناخواستهٔ رنگ دکمه‌ها در دسکتاپ */
+@media (hover: hover) {
+    .nav-item:not(.active):hover {
+        background: #f1f5f9;
+        color: #1d4ed8;
+    }
+}
