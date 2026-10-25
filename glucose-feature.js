@@ -63,14 +63,14 @@
     }
 
     function createInterface() {
-        const page = $("statisticsPage");
+       const page = $("glucosePage");
 
-        if (!page || $("glucoseFeature")) return;
+if (!page || $("glucoseFeature")) return;
 
         const section = document.createElement("section");
         section.id = "glucoseFeature";
         section.className = "glucose-card";
-
+section.style.marginTop = "0";
         section.innerHTML = `
             <div class="glucose-header">
                 <div>
