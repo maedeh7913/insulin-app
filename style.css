@@ -797,3 +797,218 @@ button {
         color: #1d4ed8;
     }
 }
+
+/* Manual Blood Glucose Feature */
+.glucose-card {
+    margin-top: 20px;
+    padding: 18px;
+    border-radius: 18px;
+    background: var(--card-bg, #fff);
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+    text-align: right;
+    color: var(--text-color, #1e293b);
+}
+
+.glucose-header,
+.glucose-subheading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.glucose-header h3,
+.glucose-subheading h3 {
+    margin: 0 0 5px;
+    font-size: 16px;
+    font-weight: 750;
+}
+
+.glucose-header p,
+.glucose-subheading p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.8;
+    color: #64748b;
+}
+
+.glucose-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: #ffe4e6;
+    font-size: 23px;
+}
+
+#glucoseForm {
+    display: grid;
+    gap: 9px;
+}
+
+#glucoseForm label {
+    margin-top: 3px;
+    font-size: 13px;
+    font-weight: 650;
+    color: #475569;
+}
+
+#glucoseForm input,
+#glucoseForm select {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid #dbe3ef;
+    border-radius: 11px;
+    background: var(--card-bg, #fff);
+    color: inherit;
+    font: inherit;
+    font-size: 14px;
+}
+
+#glucoseForm input:focus,
+#glucoseForm select:focus {
+    outline: 2px solid rgba(225, 29, 72, 0.18);
+    border-color: #e11d48;
+}
+
+.glucose-value-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 115px;
+    gap: 8px;
+}
+
+.glucose-save {
+    min-height: 45px;
+    margin-top: 7px;
+    padding: 11px 14px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #e11d48, #be123c);
+    color: white;
+    font: inherit;
+    font-weight: 750;
+    cursor: pointer;
+}
+
+#glucoseMessage {
+    min-height: 18px;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.8;
+}
+
+.glucose-subheading {
+    margin-top: 24px;
+    margin-bottom: 10px;
+}
+
+.glucose-empty {
+    padding: 22px 14px;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 2;
+    text-align: center;
+}
+
+.glucose-chart-note {
+    margin: 7px 0;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.9;
+    text-align: center;
+}
+
+.glucose-legend {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 8px 0;
+}
+
+.glucose-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: #64748b;
+}
+
+.glucose-legend-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+}
+
+#glucoseCount {
+    color: #64748b;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.glucose-record {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 13px 0;
+    border-bottom: 1px solid #e5eaf2;
+}
+
+.glucose-record:last-child {
+    border-bottom: 0;
+}
+
+.glucose-record-main {
+    min-width: 0;
+}
+
+.glucose-record-value {
+    color: #be123c;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.glucose-record-meta {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.9;
+    overflow-wrap: anywhere;
+}
+
+.glucose-delete {
+    flex-shrink: 0;
+    padding: 7px 10px;
+    border: 1px solid #fecaca;
+    border-radius: 9px;
+    background: #fff;
+    color: #b91c1c;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.glucose-disclaimer {
+    margin: 15px 0 0;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.9;
+}
+
+@media (max-width: 360px) {
+    .glucose-card {
+        padding: 13px;
+    }
+
+    .glucose-value-row {
+        grid-template-columns: minmax(0, 1fr) 100px;
+    }
+}
