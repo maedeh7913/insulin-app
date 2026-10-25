@@ -1,592 +1,293 @@
+
 /* =========================================
-   Smart Insulin Cap - Main Styles
+   Mobile Responsive Improvements
+   Smart Insulin Cap
    ========================================= */
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-:root {
-    --primary: #2563eb;
-    --primary-dark: #1d4ed8;
-    --secondary: #0f172a;
-    --background: #f1f5f9;
-    --card: #ffffff;
-    --text: #0f172a;
-    --text-light: #64748b;
-    --success: #16a34a;
-    --danger: #dc2626;
-    --warning: #f59e0b;
-    --border: #e2e8f0;
-    --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-    --radius: 18px;
+html {
+    width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
-    font-family: Arial, Helvetica, sans-serif;
-    background: var(--background);
-    color: var(--text);
-    min-height: 100vh;
+    width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+    line-height: 1.5;
 }
-
-/* =========================================
-   App Container
-   ========================================= */
 
 .app {
     width: 100%;
     max-width: 480px;
+    min-width: 0;
     min-height: 100vh;
+    min-height: 100dvh;
     margin: 0 auto;
-    background: var(--background);
-    position: relative;
-    overflow-x: hidden;
+    overflow-x: clip;
 }
 
-/* =========================================
-   Header
-   ========================================= */
+.main {
+    width: 100%;
+    min-width: 0;
+    padding: 18px 16px calc(100px + env(safe-area-inset-bottom));
+}
 
 .header {
-    background: linear-gradient(
-        135deg,
-        var(--primary),
-        var(--primary-dark)
-    );
-
-    color: white;
-    padding: 28px 20px 32px;
-    border-radius: 0 0 28px 28px;
-    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.25);
+    padding: 24px 18px 28px;
+    border-radius: 0 0 24px 24px;
 }
 
 .header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    gap: 12px;
+    min-width: 0;
 }
 
 .header-title {
-    font-size: 24px;
-    font-weight: 700;
+    font-size: clamp(20px, 5.5vw, 24px);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
 }
 
 .header-subtitle {
-    margin-top: 6px;
-    font-size: 14px;
-    opacity: 0.85;
-}
-
-/* =========================================
-   Main Content
-   ========================================= */
-
-.main {
-    padding: 20px;
-   padding-bottom: 130px;
-    min-height: calc(100vh - 100px);
+    font-size: 13px;
+    line-height: 1.7;
 }
 
 .section-title {
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 14px;
+    font-size: 17px;
+    line-height: 1.6;
+    margin-bottom: 12px;
 }
 
 .section-subtitle {
-    color: var(--text-light);
-    font-size: 13px;
-    margin-bottom: 18px;
+    line-height: 1.7;
 }
 
-/* =========================================
-   Cards
-   ========================================= */
+.card,
+.monitor,
+.stat-card,
+.sensor-card {
+    min-width: 0;
+    border-radius: 16px;
+}
 
 .card {
-    background: var(--card);
-    border-radius: var(--radius);
-    padding: 20px;
-    margin-bottom: 16px;
-    box-shadow: var(--shadow);
-    border: 1px solid rgba(226, 232, 240, 0.8);
+    padding: 16px;
+    margin-bottom: 13px;
 }
 
 .card-title {
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 12px;
-}
-
-.card-value {
-    font-size: 30px;
-    font-weight: 700;
-    color: var(--primary);
-}
-
-.card-label {
-    color: var(--text-light);
-    font-size: 13px;
-    margin-top: 5px;
-}
-
-/* =========================================
-   Dashboard Grid
-   ========================================= */
-
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-}
-
-.stat-card {
-    background: var(--card);
-    border-radius: 16px;
-    padding: 16px;
-    box-shadow: var(--shadow);
-}
-
-.stat-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    background: #eff6ff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--primary);
-    font-size: 20px;
-    margin-bottom: 12px;
-}
-
-.stat-value {
-    font-size: 24px;
-    font-weight: 700;
-}
-
-.stat-label {
-    color: var(--text-light);
-    font-size: 12px;
-    margin-top: 4px;
-}
-
-/* =========================================
-   Status
-   ========================================= */
-
-.status {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 8px 12px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-}
-
-.status.connected {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.status.connected .status-dot {
-    background: var(--success);
-}
-
-.status.disconnected {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-.status.disconnected .status-dot {
-    background: var(--danger);
-}
-
-.status.waiting {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.status.waiting .status-dot {
-    background: var(--warning);
-}
-
-/* =========================================
-   Injection Monitor
-   ========================================= */
-
-.monitor {
-    background: linear-gradient(
-        145deg,
-        #ffffff,
-        #f8fafc
-    );
-
-    border-radius: 20px;
-    padding: 22px;
-    box-shadow: var(--shadow);
-    margin-bottom: 16px;
-}
-
-.monitor-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.monitor-title {
-    font-size: 17px;
-    font-weight: 700;
-}
-
-.monitor-status {
-    font-size: 12px;
-    color: var(--text-light);
-}
-
-.monitor-value {
-    text-align: center;
-    margin: 20px 0;
-}
-
-.angle-value {
-    font-size: 52px;
-    font-weight: 700;
-    color: var(--primary);
-}
-
-.angle-unit {
-    font-size: 16px;
-    color: var(--text-light);
-    margin-left: 4px;
-}
-
-/* =========================================
-   Progress
-   ========================================= */
-
-.progress-container {
-    width: 100%;
-    height: 10px;
-    background: #e2e8f0;
-    border-radius: 999px;
-    overflow: hidden;
-}
-
-.progress-bar {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(
-        90deg,
-        var(--primary),
-        #60a5fa
-    );
-    border-radius: 999px;
-    transition: width 0.3s ease;
-}
-
-/* =========================================
-   Sensor Cards
-   ========================================= */
-
-.sensor-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-}
-
-.sensor-card {
-    background: white;
-    border-radius: 16px;
-    padding: 16px;
-    box-shadow: var(--shadow);
-}
-
-.sensor-name {
-    font-size: 13px;
-    color: var(--text-light);
-    margin-bottom: 8px;
-}
-
-.sensor-value {
-    font-size: 22px;
-    font-weight: 700;
-}
-
-.sensor-unit {
-    font-size: 12px;
-    color: var(--text-light);
-}
-
-/* =========================================
-   Buttons
-   ========================================= */
-
-.btn {
-    width: 100%;
-    border: none;
-    border-radius: 14px;
-    padding: 14px 18px;
     font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: inherit;
-}
-
-.btn:active {
-    transform: scale(0.98);
-}
-
-.btn-primary {
-    background: var(--primary);
-    color: white;
-}
-
-.btn-primary:hover {
-    background: var(--primary-dark);
-}
-
-.btn-secondary {
-    background: #e2e8f0;
-    color: var(--secondary);
-}
-
-.btn-success {
-    background: var(--success);
-    color: white;
-}
-
-.btn-danger {
-    background: var(--danger);
-    color: white;
-}
-
-.btn-outline {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text);
-}
-
-/* =========================================
-   Navigation
-   ========================================= */
-
-.bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 480px;
-
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(15px);
-
-    border-top: 1px solid var(--border);
-
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-
-    padding: 10px 10px 12px;
-
-    z-index: 100;
-}
-
-.nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    gap: 5px;
-
-    color: var(--text-light);
-    font-size: 11px;
-
-    cursor: pointer;
-    text-decoration: none;
-
-    padding: 6px;
-    border-radius: 12px;
-}
-
-.nav-icon {
-    font-size: 20px;
-}
-
-.nav-item.active {
-    color: var(--primary);
-    background: #eff6ff;
-    font-weight: 600;
-}
-
-/* =========================================
-   History
-   ========================================= */
-
-.history-item {
-    background: white;
-    border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 10px;
-    box-shadow: var(--shadow);
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.history-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.history-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    background: #eff6ff;
-    color: var(--primary);
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.history-dose {
-    font-size: 16px;
-    font-weight: 700;
-}
-
-.history-date {
-    font-size: 12px;
-    color: var(--text-light);
-    margin-top: 4px;
-}
-
-/* =========================================
-   Empty State
-   ========================================= */
-
-.empty-state {
-    text-align: center;
-    padding: 45px 20px;
-    color: var(--text-light);
-}
-
-.empty-icon {
-    font-size: 45px;
-    margin-bottom: 14px;
-    opacity: 0.5;
-}
-
-.empty-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 6px;
-}
-
-.empty-text {
-    font-size: 13px;
     line-height: 1.6;
 }
 
-/* =========================================
-   Forms
-   ========================================= */
-
-.input-group {
-    margin-bottom: 16px;
+.card-value {
+    font-size: clamp(24px, 7vw, 30px);
+    overflow-wrap: anywhere;
 }
 
-.input-label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 7px;
+.card-label {
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+.dashboard-grid,
+.sensor-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.stat-card,
+.sensor-card {
+    padding: 13px;
+}
+
+.stat-icon {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 9px;
+    border-radius: 10px;
+    font-size: 18px;
+}
+
+.stat-value {
+    font-size: clamp(19px, 5.5vw, 24px);
+    overflow-wrap: anywhere;
+}
+
+.stat-label,
+.sensor-name {
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.sensor-value {
+    font-size: clamp(18px, 5vw, 22px);
+    overflow-wrap: anywhere;
+}
+
+.monitor {
+    padding: 16px;
+}
+
+.monitor-header {
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.monitor-title {
+    font-size: 16px;
+}
+
+.monitor-value {
+    margin: 16px 0;
+}
+
+.angle-value {
+    font-size: clamp(36px, 11vw, 48px);
+    overflow-wrap: anywhere;
+}
+
+.status {
+    max-width: 100%;
+    padding: 7px 10px;
+    white-space: normal;
+}
+
+.history-item {
+    min-width: 0;
+    gap: 10px;
+    padding: 13px;
+}
+
+.history-left {
+    min-width: 0;
+    gap: 10px;
+}
+
+.history-left > * {
+    min-width: 0;
+}
+
+.history-dose,
+.history-date {
+    overflow-wrap: anywhere;
+}
+
+.history-icon {
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+}
+
+.btn {
+    min-height: 46px;
+    padding: 12px 14px;
+    line-height: 1.5;
 }
 
 .input {
+    min-height: 46px;
+    font-size: 16px;
+}
+
+.bottom-nav {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
     width: 100%;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 13px 14px;
-    font-size: 14px;
-    font-family: inherit;
-    outline: none;
-    background: white;
+    max-width: 480px;
+    margin-inline: auto;
+    padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2px;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -5px 20px rgba(15, 23, 42, 0.06);
 }
 
-.input:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-/* =========================================
-   Utility Classes
-   ========================================= */
-
-.text-center {
+.nav-item {
+    min-width: 0;
+    min-height: 52px;
+    padding: 6px 2px;
+    gap: 3px;
+    font-size: 10px;
+    line-height: 1.4;
     text-align: center;
+    overflow-wrap: anywhere;
 }
 
-.text-primary {
-    color: var(--primary);
+.nav-icon {
+    font-size: 19px;
+    line-height: 1.3;
 }
 
-.text-success {
-    color: var(--success);
+#injectionPage {
+    padding-bottom: 20px;
 }
 
-.text-danger {
-    color: var(--danger);
+#injectionPage .card {
+    padding: 13px 14px;
 }
 
-.text-muted {
-    color: var(--text-light);
+#injectionPage .card-title {
+    margin-bottom: 5px;
 }
 
-.mt-1 {
-    margin-top: 8px;
+#connectButton {
+    margin-bottom: 14px;
 }
 
-.mt-2 {
-    margin-top: 16px;
+/* Prevent wide charts, tables and media from breaking the layout */
+.app img,
+.app svg,
+.app canvas,
+.app video {
+    max-width: 100%;
 }
 
-.mt-3 {
-    margin-top: 24px;
+.app input,
+.app select,
+.app textarea,
+.app button {
+    max-width: 100%;
 }
 
-.mb-1 {
-    margin-bottom: 8px;
+/* Extra-small phones */
+@media (max-width: 360px) {
+    .main {
+        padding-inline: 12px;
+    }
+
+    .header {
+        padding: 21px 14px 24px;
+    }
+
+    .card,
+    .monitor {
+        padding: 13px;
+    }
+
+    .dashboard-grid,
+    .sensor-grid {
+        gap: 8px;
+    }
+
+    .stat-card,
+    .sensor-card {
+        padding: 11px;
+    }
+
+    .nav-item {
+        font-size: 9px;
+    }
 }
 
-.mb-2 {
-    margin-bottom: 16px;
-}
-
-.mb-3 {
-    margin-bottom: 24px;
-}
-
-/* =========================================
-   Responsive
-   ========================================= */
-
+/* Larger screens */
 @media (min-width: 600px) {
     body {
         padding: 20px 0;
@@ -594,50 +295,18 @@ body {
 
     .app {
         min-height: calc(100vh - 40px);
-        border-radius: 28px;
+        min-height: calc(100dvh - 40px);
+        border-radius: 24px;
         box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
-        overflow: hidden;
     }
 
     .bottom-nav {
         bottom: 20px;
-        border-radius: 20px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        border-radius: 18px;
         border: 1px solid var(--border);
+        padding-bottom: 10px;
     }
-}
-
-@media (max-width: 360px) {
-    .main {
-        padding: 16px;
-    }
-
-    .header {
-        padding: 24px 16px 28px;
-    }
-
-    .angle-value {
-        font-size: 44px;
-    }
-
-    .stat-value {
-        font-size: 21px;
-    }
-}#injectionPage {
-    padding-bottom: 30px;
-}
-
-#injectionPage .card {
-    padding: 14px 16px;
-}
-
-#injectionPage .card-title {
-    margin-bottom: 6px;
-}
-
-#injectionPage .card-label {
-    line-height: 1.5;
-}
-
-#connectButton {
-    margin-bottom: 20px;
 }
