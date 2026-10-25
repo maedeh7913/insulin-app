@@ -156,7 +156,13 @@
                 </div>
             </div>
         </section>
-
+<section id="glucosePage" class="page" style="display:none;">
+    <h2 class="section-title">ثبت قند خون</h2>
+    <p class="section-subtitle">
+        ثبت اندازه‌گیری‌ها، مشاهده نمودار و بررسی سوابق قند خون
+    </p>
+    <!-- محتوای این صفحه توسط glucose-feature.js ساخته می‌شود -->
+</section>
         <section id="historyPage" class="page" style="display:none;">
             <h2 class="section-title">تاریخچه تزریق</h2>
             <p class="section-subtitle">سوابق تزریق‌های ثبت‌شده</p>
@@ -166,12 +172,28 @@
         </section>
     </main>
 
-    <nav class="bottom-nav">
-        <button class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">🏠</span><span>خانه</span></button>
-        <button class="nav-item" onclick="showPage('injection')"><span class="nav-icon">💉</span><span>تزریق</span></button>
-        <button class="nav-item" onclick="showPage('statistics')"><span class="nav-icon">📊</span><span>آمار</span></button>
-        <button class="nav-item" onclick="showPage('history')"><span class="nav-icon">📋</span><span>تاریخچه</span></button>
-    </nav>
+   <nav class="bottom-nav">
+    <button class="nav-item active" onclick="showPage('dashboard')">
+        <span class="nav-icon">🏠</span>
+        <span>خانه</span>
+    </button>
+    <button class="nav-item" onclick="showPage('injection')">
+        <span class="nav-icon">💉</span>
+        <span>تزریق</span>
+    </button>
+    <button class="nav-item" onclick="showPage('statistics')">
+        <span class="nav-icon">📊</span>
+        <span>آمار</span>
+    </button>
+    <button class="nav-item" onclick="showPage('glucose')">
+        <span class="nav-icon">🩸</span>
+        <span>قند خون</span>
+    </button>
+    <button class="nav-item" onclick="showPage('history')">
+        <span class="nav-icon">📋</span>
+        <span>تاریخچه</span>
+    </button>
+</nav>
 </div>
 <script src="script.js"></script>
 <script src="glucose-feature.js"></script>
