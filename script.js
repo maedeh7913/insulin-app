@@ -324,9 +324,21 @@ function applyIncomingData(data) {
         updateValidity(normalized.injectionInvalid);
     }
 
-    if (status === "completed" && previousFirmwareStatus !== "completed") {
-        maybeRecordCompletedInjection(data);
-    }
+   const completedSignal =
+    status === "completed" ||
+    data.injectionCompleted === true ||
+    data.event === "injection_completed";
+
+if (
+    completedSignal &&
+    (
+        previousFirmwareStatus !== "completed" ||
+        data.injectionCompleted === true ||
+        data.event === "injection_completed"
+    )
+) {
+    maybeRecordCompletedInjection(data);
+}
     previousFirmwareStatus = status ?? previousFirmwareStatus;
 
     updateDashboardFromHistory();
@@ -335,37 +347,65 @@ function applyIncomingData(data) {
 }
 
 function maybeRecordCompletedInjection(payload) {
-    const status = typeof payload.status === "string" ? payload.status.toLowerCase() : "";
-    const valid =
-        payload.valid === true &&
-        status === "completed" &&
-        latestInjectionInvalid !== true &&
-        latestValidDose !== null &&
-        latestValidDose > 0;
+    const status = typeof payload.status === "string"
+        ? payload.status.toLowerCase()
+        : "";
 
-    if (!valid) {
-        console.info("[HISTORY] Injection not recorded: completion, validity and dose requirements not met.");
+    const completed =
+        status === "completed" ||
+        payload.injectionCompleted === true ||
+        payload.event === "injection_completed";
+
+    const explicitlyInvalid =
+        payload.valid === false ||
+        payload.injectionInvalid === true ||
+        status === "invalid";
+
+    const dose = validFiniteNumber(payload.dose) ?? latestValidDose;
+
+    if (!completed || explicitlyInvalid || dose === null || dose <= 0) {
+        console.info("[HISTORY] Injection not recorded:", {
+            status,
+            valid: payload.valid,
+            injectionInvalid: payload.injectionInvalid,
+            dose
+        });
         return;
     }
 
-    const eventKey = payload.eventId ?? payload.timestamp ?? payload.dateTime ?? null;
-    if (eventKey !== null && eventKey === lastRecordedEventKey) return;
-    if (eventKey !== null) lastRecordedEventKey = eventKey;
+    const eventKey =
+        payload.eventId ??
+        payload.timestamp ??
+        payload.dateTime ??
+        null;
 
-    // Fallback duplicate guard for firmware payloads without an event identifier.
-    const signature = `${latestValidDose}|${latestValidAngle}|${latestDurationMs}`;
-    const now = Date.now();
-    if (eventKey === null && signature === lastReceivedCompletedSignature) {
-        const newest = historyRecords[0];
-        if (newest && now - Number(newest.timestamp) < 5000) {
-            console.info("[HISTORY] Ignored repeated completion payload.");
-            return;
-        }
+    if (eventKey !== null && eventKey === lastRecordedEventKey) {
+        return;
     }
+
+    const now = Date.now();
+
+    const signature = `${dose}|${latestValidAngle}|${latestDurationMs}`;
+    const newest = historyRecords[0];
+
+    if (
+        eventKey === null &&
+        signature === lastReceivedCompletedSignature &&
+        newest &&
+        now - Number(newest.timestamp) < 5000
+    ) {
+        console.info("[HISTORY] Duplicate completion ignored.");
+        return;
+    }
+
     lastReceivedCompletedSignature = signature;
 
+    if (eventKey !== null) {
+        lastRecordedEventKey = eventKey;
+    }
+
     const record = {
-        dose: latestValidDose,
+        dose: dose,
         angle: latestValidAngle,
         durationMs: latestDurationMs,
         timestamp: now,
@@ -374,12 +414,17 @@ function maybeRecordCompletedInjection(payload) {
     };
 
     historyRecords.unshift(record);
-    historyRecords.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
+
+    historyRecords.sort(
+        (a, b) => Number(b.timestamp) - Number(a.timestamp)
+    );
+
     saveHistoryRecords();
     renderHistory();
     updateDashboardFromHistory();
     updateTimeSinceLastInjection();
     renderDoseChart();
+
     console.info("[HISTORY] Completed injection recorded:", record);
 }
 
