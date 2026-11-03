@@ -29,7 +29,7 @@ function loadHistoryRecords() {
             record &&
             Number.isFinite(Number(record.timestamp)) &&
             Number.isFinite(Number(record.dose)) &&
-            Number(record.dose) > 0
+            Number(record.dose) >= 0
         ).sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
     } catch (error) {
         console.warn("[HISTORY] Could not load saved history:", error);
@@ -324,19 +324,14 @@ function applyIncomingData(data) {
         updateValidity(normalized.injectionInvalid);
     }
 
-   const completedSignal =
+   const endSignal =
     status === "completed" ||
+    status === "incomplete" ||
+    status === "invalid" ||
     data.injectionCompleted === true ||
     data.event === "injection_completed";
 
-if (
-    completedSignal &&
-    (
-        previousFirmwareStatus !== "completed" ||
-        data.injectionCompleted === true ||
-        data.event === "injection_completed"
-    )
-) {
+if (endSignal) {
     maybeRecordCompletedInjection(data);
 }
     previousFirmwareStatus = status ?? previousFirmwareStatus;
@@ -347,77 +342,66 @@ if (
 }
 
 function maybeRecordCompletedInjection(payload) {
+
     const status = typeof payload.status === "string"
         ? payload.status.toLowerCase()
         : "";
 
-    const completed =
+    const endSignal =
         status === "completed" ||
+        status === "incomplete" ||
+        status === "invalid" ||
         payload.injectionCompleted === true ||
         payload.event === "injection_completed";
 
-    const explicitlyInvalid =
-        payload.valid === false ||
-        payload.injectionInvalid === true ||
-        status === "invalid";
+    if (!endSignal) return;
 
-    const dose = validFiniteNumber(payload.dose) ?? latestValidDose;
+    const dose =
+        validFiniteNumber(payload.dose) ?? latestValidDose;
 
-    if (!completed || explicitlyInvalid || dose === null || dose <= 0) {
-        console.info("[HISTORY] Injection not recorded:", {
-            status,
-            valid: payload.valid,
-            injectionInvalid: payload.injectionInvalid,
-            dose
-        });
+    const angle =
+        validFiniteNumber(payload.angle) ?? latestValidAngle;
+
+    const duration =
+        validFiniteNumber(payload.durationMs) ??
+        validFiniteNumber(payload.duration) ??
+        latestDurationMs;
+
+    if (dose === null || dose < 0) {
+        console.warn("[HISTORY] Invalid dose:", payload);
         return;
     }
 
-    const eventKey =
-        payload.eventId ??
-        payload.timestamp ??
-        payload.dateTime ??
-        null;
-
-    if (eventKey !== null && eventKey === lastRecordedEventKey) {
-        return;
-    }
-
+    const signature = `${status}|${dose}|${angle}|${duration}`;
+    const newest = historyRecords[0];
     const now = Date.now();
 
-    const signature = `${dose}|${latestValidAngle}|${latestDurationMs}`;
-    const newest = historyRecords[0];
-
+    // جلوگیری از ثبت چندباره یک رویداد
     if (
-        eventKey === null &&
         signature === lastReceivedCompletedSignature &&
         newest &&
         now - Number(newest.timestamp) < 5000
     ) {
-        console.info("[HISTORY] Duplicate completion ignored.");
+        console.info("[HISTORY] Duplicate event ignored.");
         return;
     }
 
     lastReceivedCompletedSignature = signature;
 
-    if (eventKey !== null) {
-        lastRecordedEventKey = eventKey;
-    }
-
     const record = {
         dose: dose,
-        angle: latestValidAngle,
-        durationMs: latestDurationMs,
+        angle: angle,
+        durationMs: duration,
         timestamp: now,
         timestampSource: "browser_receive_time",
-        firmwareConfirmed: true
+        firmwareConfirmed: status === "completed",
+        valid: payload.valid === true &&
+               payload.injectionInvalid !== true &&
+               status !== "invalid",
+        status: status
     };
 
     historyRecords.unshift(record);
-
-    historyRecords.sort(
-        (a, b) => Number(b.timestamp) - Number(a.timestamp)
-    );
 
     saveHistoryRecords();
     renderHistory();
@@ -425,7 +409,7 @@ function maybeRecordCompletedInjection(payload) {
     updateTimeSinceLastInjection();
     renderDoseChart();
 
-    console.info("[HISTORY] Completed injection recorded:", record);
+    console.info("[HISTORY] Injection recorded:", record);
 }
 
 function updateCapStatus(connected) {
@@ -493,7 +477,7 @@ function getValidHistory() {
         .filter(record =>
             Number.isFinite(Number(record.timestamp)) &&
             Number.isFinite(Number(record.dose)) &&
-            Number(record.dose) > 0
+           Number(record.dose) >= 0
         )
         .sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
 }
