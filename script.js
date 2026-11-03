@@ -533,13 +533,22 @@ function applyIncomingData(data) {
     // وضعیت ready با valid=false یعنی هنوز تزریق معتبری ثبت نشده؛
     // این حالت نباید به‌اشتباه تزریق نامعتبر تلقی شود.
 
-    // ثبت تاریخچه فقط هنگام ورود به وضعیت completed
-    if (
-        status === "completed" &&
-        previousFirmwareStatus !== "completed"
-    ) {
-        maybeRecordCompletedInjection(data);
-    }
+   // ثبت تاریخچه بر اساس رویداد تأییدشده برد
+if (
+    status === "completed" &&
+    data.injectionCompleted === true
+) {
+    maybeRecordCompletedInjection(data);
+}
+
+previousFirmwareStatus = status ?? previousFirmwareStatus;
+
+updateDashboardFromHistory();
+
+setSystemMessage({
+    ...appData,
+    status
+});
 
     previousFirmwareStatus = status ?? previousFirmwareStatus;
 
@@ -551,61 +560,84 @@ function applyIncomingData(data) {
     });
 }
 
+
 function maybeRecordCompletedInjection(payload) {
     const status =
         typeof payload.status === "string"
             ? payload.status.toLowerCase()
             : "";
 
+    const eventKey = payload.eventId;
+
+    const dose = validFiniteNumber(payload.dose);
+    const angle = validFiniteNumber(payload.angle);
+    const duration = validFiniteNumber(
+        payload.durationMs ?? payload.duration
+    );
+
+    // بررسی اعتبار رویداد
     const valid =
-        payload.valid === true &&
         status === "completed" &&
-        latestInjectionInvalid !== true &&
-        latestValidDose !== null &&
-        latestValidDose > 0;
+        payload.injectionCompleted === true &&
+        payload.valid === true &&
+        payload.injectionInvalid !== true &&
+        dose !== null &&
+        dose > 0;
 
     if (!valid) {
         console.info(
-            "[HISTORY] Injection not recorded: " +
-            "completion, validity and dose requirements not met."
+            "[HISTORY] Invalid or incomplete injection. Not recorded."
         );
         return;
     }
 
-    const eventKey =
-        payload.eventId ??
-        payload.timestamp ??
-        payload.dateTime ??
-        null;
-
-    if (
-        eventKey !== null &&
-        eventKey === lastRecordedEventKey
-    ) {
+    // شناسه رویداد الزامی است
+    if (eventKey === undefined || eventKey === null) {
+        console.warn(
+            "[HISTORY] Missing eventId. Injection not recorded."
+        );
         return;
     }
 
-    if (eventKey !== null) {
-        lastRecordedEventKey = eventKey;
+    // جلوگیری از ثبت تکراری
+    const alreadyExists = historyRecords.some(
+        record =>
+            String(record.eventId) === String(eventKey)
+    );
+
+    if (alreadyExists) {
+        console.info(
+            "[HISTORY] Duplicate event ignored:",
+            eventKey
+        );
+        return;
     }
 
+    // ساخت رکورد تاریخچه
     const record = {
-        dose: latestValidDose,
-        angle: latestValidAngle,
-        durationMs: latestDurationMs,
+        eventId: eventKey,
+        dose: dose,
+        angle: angle,
+        durationMs: duration,
         timestamp: Date.now(),
         timestampSource: "browser_receive_time",
         firmwareConfirmed: true
     };
 
+    // ذخیره در تاریخچه
     historyRecords.unshift(record);
+
     saveHistoryRecords();
 
     renderHistory();
     updateDashboardFromHistory();
 
-    console.info("[HISTORY] Completed injection recorded:", record);
+    console.info(
+        "[HISTORY] Completed injection recorded:",
+        record
+    );
 }
+
 
 function updateCapStatus(connected) {
     if ($("capStatus")) {
@@ -761,10 +793,14 @@ function setSystemMessage(data) {
 }
 
 function updateDashboardFromHistory() {
-    if (!historyRecords.length) {
-        return;
-    }
-
+  if (!historyRecords.length) {
+    if ($("todayInjections")) $("todayInjections").textContent = "0";
+    if ($("todayTotalDose")) $("todayTotalDose").textContent = "0.00";
+    if ($("statisticsInjectionCount")) $("statisticsInjectionCount").textContent = "0";
+    if ($("statisticsTotalDose")) $("statisticsTotalDose").textContent = "0.00";
+    if ($("lastInjectionTime")) $("lastInjectionTime").textContent = "--";
+    return;
+}
     const todayKey = new Date().toDateString();
 
     const today = historyRecords.filter(record =>
@@ -843,8 +879,10 @@ function renderHistory() {
 
         const dose = document.createElement("div");
         dose.className = "history-dose";
-        dose.textContent =
-            `${record.dose.toFixed(2)} واحد`;
+        const doseValue = Number(record.dose);
+
+dose.textContent =
+    `${doseValue.toFixed(2)} واحد`;
 
         const date = document.createElement("div");
         date.className = "history-date";
